@@ -55,22 +55,15 @@ public/despia/
 
 ```json public/despia/extensions.json
 {
-  "app": {
-    "client_id": "<your client id>",
-    "ios_bundle_id": "com.example.app",
-    "android_package": "com.example.app"
-  },
-  "extensions": ["recorder"]
+  "extensions": [
+    "recorder"
+  ]
 }
 ```
 
-`extensions.json` holds the app identity and lists the extension folders. The three identity values:
+`extensions.json` lists the extension folders.
 
-- **`client_id`**: your app's id in Despia. Open your app in the Despia editor and copy the id from the address bar: in a URL ending `/builder/<id>`, the part after `/builder/` is your client id.
-- **`ios_bundle_id`**: your app's iOS bundle id, the one Despia builds your iOS app with.
-- **`android_package`**: your app's Android package name, the one Despia builds your Android app with.
-
-The signed build inputs bind the extensions to exactly this app. If a value does not match the app being built, the build stops with an error that names the value (`NX-L013` for `client_id`).
+Despia takes app identity from the existing build configuration. You do not copy it into this file. A legacy `app` block remains optional and must match the build if present. The signed build lock must still match the app being built.
 
 `extensions.json` lists 1 to 8 folders, and each folder name matches `[a-z][a-z0-9]{1,23}`. Any other key is refused, including `manifest_version`. Each extension folder has its own `manifest.json` with a `version` field. A folder listed twice is also refused.
 

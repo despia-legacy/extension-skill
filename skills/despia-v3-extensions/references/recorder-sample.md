@@ -20,7 +20,6 @@ Copy every file to the path in its title. Paths are under `public/despia/recorde
 
 Before you build, change these values to your own:
 
-- `client_id` (the id after `/builder/` in your Despia editor URL), `ios_bundle_id` and `android_package` in `public/despia/extensions.json`;
 - the upload host `upload.example.com` in both `hosts` lists in `manifest.json`.
 
 The build policy is part of the trusted build inputs and is not served from your site. Signed-source checks verify the exact files and dependency graph; artifact checks verify the build before signing. You own the behavior and maintenance of your native code.
