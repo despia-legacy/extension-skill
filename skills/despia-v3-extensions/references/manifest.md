@@ -11,11 +11,11 @@ import despia from 'despia-native';
 
 // Run from a browser click handler or client lifecycle hook.
 async function readRecorderStatus() {
-  const responses = await despia('extension://recorder/status', ['recorderStatus']);
-  const answer = responses.recorderStatus;
-  if (answer === undefined) throw new Error('No native reply within 30 seconds');
-  if (!answer.ok) throw new Error(JSON.stringify(answer.error ?? answer));
-  return answer.data;
+  const reply = await despia('extension://recorder/status', ['recorderStatus']);
+  const answer = reply.recorderStatus;
+  if (answer === undefined) { console.error('No native reply within 30 seconds'); return; }
+  if (!answer.ok) console.error(answer.code, answer.error);
+  return answer;
 }
 ```
 
