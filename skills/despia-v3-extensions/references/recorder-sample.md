@@ -6,9 +6,9 @@ This sample records audio from the microphone, keeps recording when the app goes
 
 The page only ever sees a recording id and its state. The audio never crosses the bridge.
 
-  **Experimental. V3 only.** This is a template, not a Despia feature. It is never migrated to V4. You own and maintain this code once it is in your app. Despia does not support customised code. Read [V3 Extensions](/experiments/v3-extensions) first.
+**Experimental. V3 only.** This is a template, not a Despia feature. It is never migrated to V4. You own and maintain this code once it is in your app. Despia does not support customised code. Read [V3 Extensions](/experiments/v3-extensions) first.
 
-  **Tested on:** an iPhone 15, an Android emulator and a Samsung Galaxy S21.
+**Tested on:** an iPhone 15, an Android emulator and a Samsung Galaxy S21.
 
 ## Files
 
@@ -25,54 +25,54 @@ The approval policy is a file you send to Despia with your approval request. It 
 
 The manifest declares everything the recorder needs. The build adds them to your app.
 
-    - **Microphone.** `NSMicrophoneUsageDescription`, declared under `requires.usage_descriptions`. Set the purpose text in Despia.
-    - **Background modes.** `audio` (keep recording in the background) and `processing` (finish uploads in a background processing task named `upload`).
-    - **App Group.** The logical group `nativeext`, shared by the app and the `RecorderStatusWidget` target. It becomes `group.<bundle id>.nx.nativeext`. Register it in the Apple Developer portal and add it to both bundle IDs, as for [Home Widgets](/native-features/home-widgets).
-    - **Widget.** `RecorderStatusWidget`, a WidgetKit target with a deployment target of iOS 16.6.
-    - **Microphone.** `android.permission.RECORD_AUDIO`, declared under `requires.permissions`. Turn on the microphone permission for your app in Despia. The recorder does not ask for it on Android: it must be granted before `start`, otherwise `start` answers `permission_denied`. See [Asking for the microphone on Android](#asking-for-the-microphone-on-android).
-    - **Foreground service.** `FOREGROUND_SERVICE` and `FOREGROUND_SERVICE_MICROPHONE`, with the service type `microphone`. Google Play asks you to declare this use.
-    - **Notifications.** `POST_NOTIFICATIONS`, for the recording notification and its stop action.
-    - **Widget.** `StatusWidgetProvider`, an exported app widget receiver.
-    - **Libraries.** `androidx.core:core:1.18.0` and `androidx.work:work-runtime:2.11.2`.
+- **Microphone.** `NSMicrophoneUsageDescription`, declared under `requires.usage_descriptions`. Set the purpose text in Despia.
+- **Background modes.** `audio` (keep recording in the background) and `processing` (finish uploads in a background processing task named `upload`).
+- **App Group.** The logical group `nativeext`, shared by the app and the `RecorderStatusWidget` target. It becomes `group.<bundle id>.nx.nativeext`. Register it in the Apple Developer portal and add it to both bundle IDs, as for [Home Widgets](/native-features/home-widgets).
+- **Widget.** `RecorderStatusWidget`, a WidgetKit target with a deployment target of iOS 16.6.
+- **Microphone.** `android.permission.RECORD_AUDIO`, declared under `requires.permissions`. Turn on the microphone permission for your app in Despia. The recorder does not ask for it on Android: it must be granted before `start`, otherwise `start` answers `permission_denied`. See [Asking for the microphone on Android](#asking-for-the-microphone-on-android).
+- **Foreground service.** `FOREGROUND_SERVICE` and `FOREGROUND_SERVICE_MICROPHONE`, with the service type `microphone`. Google Play asks you to declare this use.
+- **Notifications.** `POST_NOTIFICATIONS`, for the recording notification and its stop action.
+- **Widget.** `StatusWidgetProvider`, an exported app widget receiver.
+- **Libraries.** `androidx.core:core:1.18.0` and `androidx.work:work-runtime:2.11.2`.
 
 ## Using it from your web app
 
 The upload URL is the address the file is sent to with an HTTP `PUT`, with `Content-Type: audio/mp4` and an `X-Recording-Id` header. A presigned storage URL works well. Its host must be in the route's `hosts` list.
 
-    ```javascript
-    import despia from 'despia-native';
+```javascript
+import despia from 'despia-native';
 
-    // Start recording. uploadUrl is where the file goes when recording stops.
-    const r = await despia(
-      'extension://recorder/start?upload=' + encodeURIComponent(uploadUrl),
-      ['recorderStart']
-    );
-    if (!r.recorderStart.ok) throw new Error(r.recorderStart.code);
-    const id = r.recorderStart.data.recordingId;
+// Start recording. uploadUrl is where the file goes when recording stops.
+const r = await despia(
+  'extension://recorder/start?upload=' + encodeURIComponent(uploadUrl),
+  ['recorderStart']
+);
+if (!r.recorderStart.ok) throw new Error(r.recorderStart.code);
+const id = r.recorderStart.data.recordingId;
 
-    // Stop recording. The upload starts by itself.
-    await despia('extension://recorder/stop?id=' + id, ['recorderStop']);
+// Stop recording. The upload starts by itself.
+await despia('extension://recorder/stop?id=' + id, ['recorderStop']);
 
-    // Read the state at any time, also after the app was closed.
-    const s = await despia('extension://recorder/status?id=' + id, ['recorderStatus']);
-    console.log(s.recorderStatus.data.state);
-    ```
-    ```javascript
-    window.onRecorderStart = (result) => {
-      if (result.ok) {
-        localStorage.setItem('recordingId', result.data.recordingId);
-      } else {
-        console.error(result.code, result.error);
-      }
-    };
+// Read the state at any time, also after the app was closed.
+const s = await despia('extension://recorder/status?id=' + id, ['recorderStatus']);
+console.log(s.recorderStatus.data.state);
+```
+```javascript
+window.onRecorderStart = (result) => {
+  if (result.ok) {
+    localStorage.setItem('recordingId', result.data.recordingId);
+  } else {
+    console.error(result.code, result.error);
+  }
+};
 
-    // Every state change, while this page has called the recorder.
-    window.onRecorderState = (data) => {
-      console.log(data.recordingId, data.state, data.durationMs, data.bytes);
-    };
+// Every state change, while this page has called the recorder.
+window.onRecorderState = (data) => {
+  console.log(data.recordingId, data.state, data.durationMs, data.bytes);
+};
 
-    window.despia = "extension://recorder/start?upload=" + encodeURIComponent(uploadUrl);
-    ```
+window.despia = "extension://recorder/start?upload=" + encodeURIComponent(uploadUrl);
+```
 
 ### Asking for the microphone on Android
 

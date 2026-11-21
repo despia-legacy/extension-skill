@@ -1,0 +1,97 @@
+# Home Widgets sample
+
+Source: https://setup.despia.com/experiments/samples/home-widgets
+
+This sample puts data from your web app into native home-screen widgets. It includes a stat card and a list with buttons and checkboxes. The page sets and reads the widget data, reloads the sample's widgets, lists installed widgets and reads queued taps.
+
+It is for the Despia V3 runtime. You own and maintain the copied native code. First-party V4 support comes through the new package registry. Read [V3 Extensions](https://setup.despia.com/experiments/v3-extensions) for approval and rebuild requirements.
+
+**Tested on:** iOS simulator, 8/8 scenarios; TestingBot Pixel, 5/5 scenarios; Android emulator, 7 of 8 scenarios. The Android emulator run failed the warm deep-link tap case, so that path is not yet proven.
+
+## Install
+
+1. Copy the files from the linked sample repository into `public/despia/widgets/` in your web app, keeping their `ios/` and `android/` paths. The [sample repository](https://github.com/despia-legacy/despia-extension-home-widgets) carries the same template.
+2. Add `"widgets"` to the `extensions` array in `public/despia/extensions.json`, keeping your app identity and any other extension names.
+3. For iOS, register the App Group `group.<your bundle id>.nx.widgets` and enable it on both the app and the widget extension App IDs. The widget extension bundle ID is `<your bundle id>.NXWidgets`. Regenerate both provisioning profiles.
+4. Send the extension for approval and rebuild your native app. Changing the native files needs a new approval and build.
+
+The manifest adds the `NXWidgets` WidgetKit target on iOS and a custom Glance module on Android. The approval policy stays outside your served `public/despia/` folder. The Android module declares the widget receivers and its RemoteViews service.
+
+## Call it from your web app
+
+```javascript
+window.onWidgetsSet = (answer) => {
+  if (answer.ok) {
+    console.log(answer.data.template, answer.data.stored);
+  } else {
+    console.error(answer.code, answer.error);
+  }
+};
+
+const widget = {
+  title: "Today's orders",
+  value: "12",
+  caption: "Ready to dispatch",
+  progress: 0.6,
+  link: "/orders"
+};
+window.despia = "extension://widgets/set?template=stat&data="
+  + encodeURIComponent(JSON.stringify(widget));
+```
+
+```javascript
+window.onWidgetsGet = (answer) => console.log(answer);
+window.despia = "extension://widgets/get?template=stat";
+
+window.onWidgetTap = (tap) => console.log(tap.template, tap.kind, tap.id);
+window.onWidgetsTaps = (answer) => console.log(answer);
+window.despia = "extension://widgets/taps";
+```
+
+Setting data does not place a widget on the screen. The person adds it from the widget gallery, or accepts an Android `pin` request.
+
+## Routes and answers
+
+Each success answer uses `{ok: true, data: ...}`. Failures use `{ok: false, code, error}`. The table lists the fields inside `data`.
+
+| Route | Parameters | Answer variable and callback | Answer |
+| --- | --- | --- | --- |
+| `set` | Required: `template` (`stat` or `list`), `data` (JSON text) | `widgetsSet`, `onWidgetsSet` | `template`, `stored: true` |
+| `get` | Required: `template` | `widgetsGet`, `onWidgetsGet` | `template`, `data` (canonical object, or `null` when empty) |
+| `clear` | Required: `template` | `widgetsClear`, `onWidgetsClear` | `template`, `cleared: true` |
+| `reload` | Optional: `template` | `widgetsReload`, `onWidgetsReload` | `reloaded`, an array of template names |
+| `installed` | None | `widgetsInstalled`, `onWidgetsInstalled` | `widgets`, an array of placed widgets |
+| `taps` | Optional: `ack` (integer from 0 to 9007199254740991) | `widgetsTaps`, `onWidgetsTaps` | `taps`, `dropped`, `next` |
+| `pin` | Required: `template` | `widgetsPin`, `onWidgetsPin` | Android: `requested: true` if the request was shown. iOS: `platform_limit` |
+
+`reload` touches only this sample's widget kinds. For `installed`, each iOS row contains `template` and `family`; each Android row contains `template`, `width` and `height` in dp.
+
+### Widget data
+
+The JSON text must fit in 4096 UTF-8 bytes. Unknown keys, duplicate keys and invalid types return `bad_data` with the field path and reason.
+
+| Template | Required fields | Optional fields |
+| --- | --- | --- |
+| `stat` | `title` (1 to 40 characters), `value` (1 to 16 characters) | `unit` (1 to 12), `caption` (1 to 60), `progress` (0 to 1), `trend` (`up`, `down`, `flat`), `tint`, `link`, `actions` (up to 2 buttons) |
+| `list` | `title` (1 to 40 characters), `items` (up to 8) | `empty` (1 to 60), `tint`, `link`, `action` (one button) |
+
+Each list item requires `id` and `title` (1 to 60 characters). It may have `subtitle` (1 to 60), `checked` (boolean) and `link`. Each button requires `id` and `label` (1 to 20). IDs contain 1 to 32 lowercase letters, digits, underscores or hyphens. IDs must be unique within their list or button array. `tint` is `#RRGGBB`. A `link` is an app path starting with one `/`, with no backslash or spaces, up to 512 characters.
+
+### Taps
+
+`onWidgetTap` receives `{seq, template, kind, id, at}`, plus `link` for an open and `checked` for a toggle. `kind` is `open`, `action` or `toggle`. Its event scope is the document: pages that have called this extension receive it.
+
+Taps are stored before they are emitted. Call `taps` after a page loads, then pass the last consumed `seq` as `ack` on the next read to remove acknowledged taps. The queue keeps the newest 32 taps and counts older discarded taps in `dropped`.
+
+### Errors
+
+Besides the [standard bridge errors](https://setup.despia.com/experiments/v3-extensions#error-codes), the sample can return `bad_data` or `storage_failed`. On iOS, missing App Group access returns `group_unavailable` for the storage routes. Android `pin` can return `pin_unavailable` when the launcher does not support pinning. iOS `pin` returns `platform_limit`.
+
+## Platform limits
+
+- The iOS widget extension requires iOS 17. The user places widgets through the widget gallery; iOS has no app API for placing one. App Group access is required to share the widget data and taps.
+- Android pinning needs Android 8 or later and a launcher that supports it. `requested: true` confirms the request was shown, not that a widget was placed. Check `installed` afterwards.
+- Widget size, placement and update timing are controlled by the OS and launcher. The sample requests updates of its own widget kinds only.
+- The Android emulator warm deep-link tap case failed in the recorded run. The cold deep-link case passed. The TestingBot Pixel result covers five scenarios and does not prove the failed emulator case.
+
+The [extension skill](https://github.com/despia-legacy/extension-skill) includes a reference for this sample.

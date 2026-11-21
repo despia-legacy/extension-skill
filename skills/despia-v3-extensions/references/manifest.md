@@ -9,6 +9,7 @@ window.despia = "extension://recorder/start?upload=" + encodeURIComponent(upload
 ```
 
 Use V3 Extensions when you need a native capability that Despia does not offer as a feature yet, or when you need full control over the native code. The [Samples](/experiments/samples/recorder) are complete templates you can copy and change.
+
 ## How it works
 
 - **The manifest declares the extension.**
@@ -141,6 +142,22 @@ You never download a library yourself. Name it in your files, and when Despia ap
 ```
 
 Swift packages come from `github.com` over https.
+
+**iOS: a CocoaPod.** The manifest also accepts CocoaPods. Declare exact pod names and versions in `ios.pods`, point `ios.podfile_lock` at the lockfile under your extension's `ios/` folder, and put the installed-tree SHA-256 for every root pod in that lockfile in `ios.pod_trees`:
+
+```json
+{
+  "ios": {
+    "pods": [{ "name": "Lottie", "version": "4.5.0" }],
+    "podfile_lock": "ios/Podfile.lock",
+    "pod_trees": {
+      "Lottie": "<installed-tree-sha256>"
+    }
+  }
+}
+```
+
+This is an illustrative manifest excerpt, not a tested app. Replace `<installed-tree-sha256>` with the measured 64-character lowercase hexadecimal digest. The lockfile must contain the declared version, a spec checksum for every resolved root pod, and the complete dependency closure. Add a tree digest for every root pod in that closure, not just the direct dependency. The build checks the installed trees and preserves the base app's existing pods. This CocoaPods example is not yet tested on a device.
 
 **Android: a Maven library.** Add a `custom` module in `manifest.json` that points at your own module folder, and list the libraries in that module's `build.gradle` with `implementation`, the same way as in Android Studio:
 
