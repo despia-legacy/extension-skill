@@ -1,8 +1,8 @@
-# Background Recorder sample notes
+# Background Recorder extension notes
 
-Source: https://setup.despia.com/experiments/samples/recorder . The files are in examples/recorder/ (copy each to public/despia/recorder/<path>, except extensions.json which goes in public/despia/, and recorder.policy.json which is sent to Despia with the approval request and is not served).
+Source: https://setup.despia.com/experiments/extensions/recorder . The files are in examples/recorder/ (copy each to public/despia/recorder/<path>, except extensions.json which goes in public/despia/, and recorder.policy.json which is sent to Despia with the approval request and is not served).
 
-This sample records audio from the microphone, keeps recording when the app goes to the background, and uploads the file to your server when recording stops. It shows its state in a Lock Screen widget on iOS, and in a foreground service notification and a home screen widget on Android.
+This extension records audio from the microphone, keeps recording when the app goes to the background, and uploads the file to your server when recording stops. It shows its state in a Lock Screen widget on iOS, and in a foreground service notification and a home screen widget on Android.
 
 The page only ever sees a recording id and its state. The audio never crosses the bridge.
 
@@ -39,42 +39,28 @@ The manifest declares everything the recorder needs. The build adds them to your
 
 ## Using it from your web app
 
-The upload URL is the address the file is sent to with an HTTP `PUT`, with `Content-Type: audio/mp4` and an `X-Recording-Id` header. A presigned storage URL works well. Its host must be in the route's `hosts` list.
+The upload URL receives an HTTP `PUT`, with `Content-Type: audio/mp4` and an `X-Recording-Id` header. Its host must be in the route's approved `hosts` list.
+
+Use the local `callExtension` helper from `references/routes-and-answers.md`. Run this function from a client event after obtaining any required microphone permission:
 
 ```javascript
-import despia from 'despia-native';
+import {callExtension} from './despia-extension.js';
 
-// Start recording. uploadUrl is where the file goes when recording stops.
-const r = await despia(
-  'extension://recorder/start?upload=' + encodeURIComponent(uploadUrl),
-  ['recorderStart']
-);
-if (!r.recorderStart.ok) throw new Error(r.recorderStart.code);
-const id = r.recorderStart.data.recordingId;
+async function startRecording(uploadUrl) {
+  const started = await callExtension(
+    'extension://recorder/start?upload=' + encodeURIComponent(uploadUrl)
+  );
+  return started.recordingId;
+}
 
-// Stop recording. The upload starts by itself.
-await despia('extension://recorder/stop?id=' + id, ['recorderStop']);
-
-// Read the state at any time, also after the app was closed.
-const s = await despia('extension://recorder/status?id=' + id, ['recorderStatus']);
-console.log(s.recorderStatus.data.state);
+async function stopRecording(id) {
+  await callExtension('extension://recorder/stop?id=' + encodeURIComponent(id));
+  const status = await callExtension('extension://recorder/status?id=' + encodeURIComponent(id));
+  console.log(status.state);
+}
 ```
-```javascript
-window.onRecorderStart = (result) => {
-  if (result.ok) {
-    localStorage.setItem('recordingId', result.data.recordingId);
-  } else {
-    console.error(result.code, result.error);
-  }
-};
 
-// Every state change, while this page has called the recorder.
-window.onRecorderState = (data) => {
-  console.log(data.recordingId, data.state, data.durationMs, data.bytes);
-};
-
-window.despia = "extension://recorder/start?upload=" + encodeURIComponent(uploadUrl);
-```
+Register `onRecorderState` as described in `references/routes-and-answers.md` before starting if you need live changes. Read `status` after a page reload; event delivery is not durable.
 
 ### Asking for the microphone on Android
 
@@ -87,7 +73,7 @@ async function ensureMicrophone() {
 }
 
 await ensureMicrophone();
-await despia('extension://recorder/start?upload=' + encodeURIComponent(uploadUrl), ['recorderStart']);
+const started = await callExtension('extension://recorder/start?upload=' + encodeURIComponent(uploadUrl));
 ```
 
 If the user denies it, `getUserMedia` throws and `start` answers `permission_denied`.
@@ -102,7 +88,7 @@ If the user denies it, `getUserMedia` throws and `start` answers `permission_den
 | `discard` | `id` (required)            | `recorderDiscard`, `onRecorderDiscard`| Deletes a stopped recording and its file                                                            |
 | `upload`  | `id`, `upload` (required)  | `recorderUpload`, `onRecorderUpload`  | Sends a saved recording again to a fresh URL, for example after a presigned URL expired             |
 
-The `state` event calls `window.onRecorderState(data)` on every change.
+The `state` event calls the declared `onRecorderState(data)` handler on changes.
 
 ### States
 

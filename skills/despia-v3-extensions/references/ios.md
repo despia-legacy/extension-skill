@@ -4,7 +4,7 @@ Source: the published V3 Extensions page, https://setup.despia.com/experiments/v
 
 ## The iOS handler
 
-The manifest names the entry type in `ios.app.entry_type`. It is a class marked `@MainActor` that conforms to `NativeExtension`. From the [recorder sample](/experiments/samples/recorder):
+The manifest names the entry type in `ios.app.entry_type`. It is a class marked `@MainActor` that conforms to `NativeExtension`. From the [recorder extension](/experiments/samples/recorder):
 
 ```swift ios/app/RecorderExtension.swift (excerpt)
 @MainActor
