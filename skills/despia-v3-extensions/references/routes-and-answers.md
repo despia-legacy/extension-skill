@@ -146,7 +146,7 @@ An error carries a code and a message, and nothing else. If the page must tell f
 | `handler_error`    | Your handler failed                                                        |
 | Your own codes     | Any code your handler returns, for example `busy` or `permission_denied`   |
 
-In an extension-enabled build, an unregistered extension or route answers an explicit `callback`; otherwise it fires `despia-feature-not-included`. A build without the runtime cannot answer. For missing responses, see `troubleshooting.md`.
+In a build containing the extension runtime, an unregistered extension or route answers an explicit `callback`; otherwise it fires `despia-feature-not-included`. A build without the runtime cannot answer. For missing responses, see `troubleshooting.md`.
 
 ## Patterns the extensions use
 

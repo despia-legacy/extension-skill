@@ -1,6 +1,6 @@
 # Calendar extension, prepared V3 reference
 
-Publication and runtime hold: these source previews require the app changes and an approved extension build path. Do not promise that a regular generation installs them. Read references/troubleshooting.md first.
+Publication and runtime hold: these source previews require the app changes and a rebuilt app containing the extension runtime. Do not promise that a regular generation installs them. Read references/troubleshooting.md first.
 
 Source repository: [Calendar](https://github.com/despia-legacy/calendar).
 
@@ -8,7 +8,7 @@ A Despia V3 extension over iOS EventKit and the Android Calendar Provider. Share
 
 For the Despia V3 runtime. First-party V4 support comes through the new package registry.
 
-**Source preview.** Runtime changes and hosted extension support are pending deployment. An approved extension-enabled native build is required.
+**Source preview.** Runtime changes and hosted extension support are pending deployment. The extension must be compiled into a rebuilt native app.
 
 ## Web frameworks and app builders
 
@@ -19,16 +19,16 @@ the same Despia JS SDK commands from client lifecycle hooks or click handlers.
 For Lovable, Base44, Replit or another app builder, use a project that lets you
 add custom JavaScript and serve the extension files at their exact HTTPS paths.
 You can edit those files with Claude Code, Codex, Cursor or your usual editor.
-The native extension must be approved and included in the installed Despia V3
+The native extension must be compiled into the installed Despia V3
 app. A browser preview alone does not provide native extension features.
 
-## Install in an approved extension build
+## Rebuild and install
 
 1. Copy manifest.json, ios/ and android/ to public/despia/calendar/ in your web app.
 2. Add calendar to public/despia/extensions.json. The prepared minimal index is `{ "extensions": ["calendar"] }`; use it only after the no-app-identity runtime reaches your build. Existing matching legacy identity blocks remain compatible. Do not add manifest_version to the index.
 3. Supply purpose text for the five keys in `ios.app.requires.usage_descriptions`: `NSCalendarsUsageDescription`, `NSCalendarsFullAccessUsageDescription`, `NSCalendarsWriteOnlyAccessUsageDescription`, `NSRemindersUsageDescription` and `NSRemindersFullAccessUsageDescription`. Existing app configuration may provide them. With the prepared runtime change, add approved nonempty fallback values under `ios.app.info_plist` and set `ios.app.custom_keys: true`. Nonempty app-configured text wins. No new dashboard or Xano field is needed for these framework purpose strings.
-4. Send calendar.policy.json with the approval request. It declares the Android READ_CALENDAR and WRITE_CALENDAR permission additions. These declarations are separate from the user's runtime consent. The policy file is not served from your site.
-5. Approve the source and rebuild through the extension-enabled path, then install that artifact.
+4. Keep calendar.policy.json with the trusted build inputs. It declares the Android READ_CALENDAR and WRITE_CALENDAR permission additions. These declarations are separate from the user's runtime consent. The policy file is not served from your site.
+5. Verify the build inputs, rebuild the native app and install that artifact.
 
 No Google Calendar cloud OAuth or server credential is included. Android reads calendars on the device, which may be synced by installed Google, Exchange or other account providers. iOS reads the calendars EventKit exposes. Neither OS guarantees that every cloud calendar or remote sharing feature is available through its device API.
 

@@ -1,6 +1,6 @@
 # Meta Ads extension, prepared V3 reference
 
-Publication and runtime hold: these source previews require the app changes, automatic ATT backend/editor rollout where used, and an approved extension build path. Do not promise that a regular generation installs them. Read references/troubleshooting.md first.
+Publication and runtime hold: these source previews require the app changes, automatic ATT backend/editor rollout where used, and a rebuilt app containing the extension runtime. Do not promise that a regular generation installs them. Read references/troubleshooting.md first.
 
 Source repository: [Meta Ads](https://github.com/despia-legacy/meta-ads).
 
@@ -8,7 +8,7 @@ A native advertiser SDK extension using Meta Facebook Core SDK 19.0.1 on iOS and
 
 For the Despia V3 runtime. First-party V4 support comes through the new package registry.
 
-**Source preview.** Runtime changes and hosted extension support are pending deployment. An approved extension-enabled native build is required.
+**Source preview.** Runtime changes and hosted extension support are pending deployment. The extension must be compiled into a rebuilt native app.
 
 ## Web frameworks and app builders
 
@@ -19,7 +19,7 @@ the same Despia JS SDK commands from client lifecycle hooks or click handlers.
 For Lovable, Base44, Replit or another app builder, use a project that lets you
 add custom JavaScript and serve the extension files at their exact HTTPS paths.
 You can edit those files with Claude Code, Codex, Cursor or your usual editor.
-The native extension must be approved and included in the installed Despia V3
+The native extension must be compiled into the installed Despia V3
 app. A browser preview alone does not provide native extension features.
 
 ## Install
@@ -27,9 +27,9 @@ app. A browser preview alone does not provide native extension features.
 1. Copy this repository's manifest.json, ios/ and android/ into public/despia/metaads/ in your web app.
 2. Add "metaads" to public/despia/extensions.json: `{ "extensions": ["metaads"] }`. The minimal index requires the no-app-identity runtime change to have reached your build. The legacy index remains compatible.
 3. Set FacebookAppID, FacebookClientToken and FacebookDisplayName in manifest.json under ios.app.info_plist. Set the matching Android APP_ID and CLIENT_TOKEN in MetaAdsExtension.java. Use app SDK configuration, never a server Graph API token.
-4. Approve the extension and its dependency closure, then rebuild and install the native app. Copying files to the website does not update an installed app.
+4. Verify the source and complete pinned dependency graph, then rebuild and install the native app. Copying files to the website does not update an installed app.
 
-The Swift package is pinned to commit 7c3fb7856063fa1074d330616f4070f2ed10a49b. Android declares com.facebook.android:facebook-core:19.0.1. Dependencies are fetched and pinned during approval. Keep the included automatic initialization and collection flags off until the app explicitly configures and enables collection.
+The Swift package is pinned to commit 7c3fb7856063fa1074d330616f4070f2ed10a49b. Android declares com.facebook.android:facebook-core:19.0.1. Dependencies are resolved, pinned and verified as build inputs. Keep the included automatic initialization and collection flags off until the app explicitly configures and enables collection.
 
 ## Call from the page
 
@@ -86,7 +86,7 @@ SKAdNetworkItems is editable in ios.app.info_plist with custom_keys=true, and st
 
 ## Platform limits
 
-Current V3 iOS builds target iOS16.6 and later. Android module minSdk24, compileSdk36. An ATT API introduced in iOS14 does not lower the app's deployment target. Android uses the advertiser SDK and may need the base app's Advertising ID permission for identifier collection. Normal internet/network permissions are in the module manifest. Review the final merged manifest and store disclosures during approval.
+Current V3 iOS builds target iOS16.6 and later. Android module minSdk24, compileSdk36. An ATT API introduced in iOS14 does not lower the app's deployment target. Android uses the advertiser SDK and may need the base app's Advertising ID permission for identifier collection. Normal internet/network permissions are in the module manifest. Review the final merged manifest and store disclosures during build verification.
 
 [Despia V3 Extensions documentation](https://setup.despia.com/experiments/v3-extensions) and [extension skill](https://github.com/despia-legacy/extension-skill).
 
