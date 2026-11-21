@@ -16,7 +16,6 @@ Copy every file to the path in its title. Paths are under `public/despia/recorde
 
 Before you build, change these values to your own:
 
-- `client_id` (the id after `/builder/` in your Despia editor URL), `ios_bundle_id` and `android_package` in `public/despia/extensions.json`;
 - the upload host `upload.example.com` in both `hosts` lists in `manifest.json`.
 
 The approval policy is a file you send to Despia with your approval request. It is not served from your site. Despia reviews and approves these exact files before a build includes them.
