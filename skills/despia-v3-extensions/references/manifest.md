@@ -2,6 +2,8 @@
 
 Source: the published V3 Extensions page, https://docs.despia.com/experiments/v3-extensions (Experimental, Despia V3 only).
 
+**Requires an extension-enabled build.** Files hosted under /despia/ are preparation only. A regular app build does not fetch or compile them automatically. Despia must confirm app availability and approve the files and dependency closure. A completed normal build is not an extension code check. Read `troubleshooting.md` before promising a regeneration will include the code.
+
 V3 Extensions let you add your own native code to a Despia V3 app. You write the Swift (iOS) and Kotlin or Java (Android) files, describe them in a JSON manifest, and serve them from your web app. Despia builds them into your app. Your web code then calls them with one scheme:
 
 ```javascript
@@ -40,7 +42,6 @@ public/despia/
 
 ```json public/despia/extensions.json
 {
-  "manifest_version": 1,
   "app": {
     "client_id": "<your client id>",
     "ios_bundle_id": "com.example.app",
@@ -58,7 +59,7 @@ public/despia/
 
 Despia approves the extensions for exactly this app. If a value does not match the app being built, the build stops with an error that names the value (`NX-L013` for `client_id`).
 
-`extensions.json` lists 1 to 8 folders, and each folder name matches `[a-z][a-z0-9]{1,23}`. Any other key is refused, and so is a folder listed twice.
+`extensions.json` lists 1 to 8 folders, and each folder name matches `[a-z][a-z0-9]{1,23}`. Any other key is refused, including `manifest_version`. Each extension folder has its own `manifest.json` with a `version` field. A folder listed twice is also refused.
 
 The folder name is the id in the scheme. `public/despia/recorder/` is called as `extension://recorder/<route>`. File paths in `manifest.json` are relative to the extension's folder and start with `ios/` or `android/`, for example `ios/app/RecorderExtension.swift`. An extension can only name files inside its own folder. A `manifest.json` that also sets `"id"` is refused, because the folder name is the id.
 
@@ -116,6 +117,7 @@ Parameters are declared per route. Anything not declared is refused with `bad_re
 An `int` may declare `min` and `max` anywhere in the range -(2^53-1) to 2^53-1 (the default is -2^31 to 2^31-1), and a value outside it is refused. A `string`'s `max` is at most 4096.
 
 Keep large data on the native side and pass identifiers through the bridge. A call URL is at most 8192 characters, and each extension accepts up to 20 calls per second.
+
 ## Declaring native work
 
 Both ways are declared in an extension's `manifest.json`.
@@ -125,7 +127,7 @@ Both ways are declared in an extension's `manifest.json`.
 
 ## Adding a Swift package or a Maven library
 
-You never download a library yourself. Name it in your files, and when Despia approves the extension it fetches the library and everything it depends on and pins those exact copies. The build then uses the pinned copies, so nothing is downloaded while your app builds.
+Declare dependencies and include their required graph files. Approval covers the pinned dependency closure as part of an extension build. A package URL or Maven coordinate alone does not enable the extension or complete its approval. Manually copying library binaries is not required.
 
 **iOS: a Swift package from GitHub.** List it under `ios.packages` in `manifest.json` with its GitHub URL, the full commit `revision` of the release you want, and the products you use. Then link the product in your app target under `ios.app.packages`. From the Stream calling template:
 
@@ -142,6 +144,7 @@ You never download a library yourself. Name it in your files, and when Despia ap
         "products": ["StreamVideo"]
       }
     ],
+    "package_resolved": "ios/Package.resolved",
     "app": {
       "packages": ["StreamVideo"]
     }
@@ -149,7 +152,7 @@ You never download a library yourself. Name it in your files, and when Despia ap
 }
 ```
 
-Swift packages come from `github.com` over https.
+Swift packages come from `github.com` over https. Remote packages require `ios.package_resolved` pointing to the complete pinned `Package.resolved` graph, including transitive packages. The snippet is an excerpt, not a graph file. Missing the reference is refused with `NX-M100`.
 
 **iOS: a CocoaPod.** The manifest also accepts CocoaPods. Declare exact pod names and versions in `ios.pods`, point `ios.podfile_lock` at the lockfile under your extension's `ios/` folder, and put the installed-tree SHA-256 for every root pod in that lockfile in `ios.pod_trees`:
 
@@ -195,7 +198,7 @@ Both ways may also declare:
 - **Android `meta_data`.** Application `<meta-data>` entries, each a `name` and exactly one of `value` or `resource`. A name the app already declares, or another extension declares, is refused. Keep account values in your config, not in a public repository.
 - **iOS `packages[].weak: true`.** Every product of that package is linked as optional, so an app whose deployment target is below the package's minimum still launches. Guard its use with `#available`.
 
-Files are accepted by type: source and text formats, assets and binaries. Every file must be named in its `manifest.json`, and an unreferenced file is refused. Hidden files (names that start with a dot) are always refused. Binaries need approval.
+Files are accepted by type: source and text formats, assets and binaries. Every file must be covered by its `manifest.json`, and an unreferenced file is refused. A custom Android module `dir` covers its approved directory tree recursively. Hidden files (names that start with a dot) are always refused. Binaries need approval.
 
 ## What the build owns
 
