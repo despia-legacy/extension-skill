@@ -8,7 +8,7 @@ A native advertiser SDK extension using TikTok App Events SDK 1.7.2 on iOS and 1
 
 For the Despia V3 runtime. First-party V4 support comes through the new package registry.
 
-**Source preview.** Real SDK compilation has been checked. The approved hosted extension build path and related runtime changes are not deployed yet. An ordinary app generation does not install this extension. Device events and advertising attribution are not yet tested.
+**Source preview.** Runtime changes and hosted extension support are pending deployment. An approved extension-enabled native build is required.
 
 ## Web frameworks and app builders
 
@@ -21,7 +21,6 @@ add custom JavaScript and serve the extension files at their exact HTTPS paths.
 You can edit those files with Claude Code, Codex, Cursor or your usual editor.
 The native extension must be approved and included in the installed Despia V3
 app. A browser preview alone does not provide native extension features.
-These are integration requirements, not a tested matrix of every builder.
 
 ## Install
 
@@ -71,8 +70,6 @@ SKAdNetworkItems under ios.app.info_plist is customer-editable and starts empty.
 An existing initialized TikTok SDK is left to its original integration: configure returns already_configured. Adapt the native code if the app deliberately shares that SDK. The SDK can use app-wide lifecycle and exception handling, so test it with the app's other native integrations.
 
 Current V3 iOS target is 16.6 and later. Android module minSdk24 and compileSdk36. Billing is a vendor dependency, not a purchase UI supplied by this extension; review its merged permission and the base billing configuration during approval.
-
-Tested on: real iOS SDK simulator typecheck and Android SDK module assemble only. Device events, TikTok Events Manager delivery, store installs and SKAdNetwork postbacks: not yet tested.
 
 [Despia V3 Extensions documentation](https://setup.despia.com/experiments/v3-extensions) and [extension skill](https://github.com/despia-legacy/extension-skill).
 
