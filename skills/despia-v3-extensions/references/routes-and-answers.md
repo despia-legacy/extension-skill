@@ -2,49 +2,141 @@
 
 Source: the published V3 Extensions page, https://setup.despia.com/experiments/v3-extensions (Experimental, Despia V3 only).
 
-## Calling a route
+## Calling a route with the Despia JS SDK
 
-**Promise**
-    With the `despia-native` package, pass the route's answer variable to `despia()` and await it:
+Install the SDK in your web project:
 
-    ```javascript
-    import despia from 'despia-native';
+```bash
+npm install despia-native
+```
 
-    const r = await despia(
-      'extension://recorder/start?upload=' + encodeURIComponent(uploadUrl),
-      ['recorderStart']
-    );
+Import `despia` from `despia-native`. The examples use the published 1.0.28 API. A command without watched variables resolves when queued, not when the native operation finishes. Pass one answer variable when you need a result:
 
-    if (r.recorderStart.ok) {
-      console.log(r.recorderStart.data.recordingId);
-    } else {
-      console.error(r.recorderStart.code, r.recorderStart.error);
+```javascript
+import despia from 'despia-native';
+
+// Run from a browser click handler or client lifecycle hook.
+async function readRecorderStatus() {
+  const responses = await despia('extension://recorder/status', ['recorderStatus']);
+  const answer = responses.recorderStatus;
+  if (answer === undefined) throw new Error('No native reply within 30 seconds');
+  if (!answer.ok) throw new Error(JSON.stringify(answer.error ?? answer));
+  return answer.data;
+}
+```
+
+`recorderStatus` is the output variable declared by the Recorder manifest. Serialize calls that watch the same declared variable: await one before starting the next, including calls from other components. Sharing a watched variable across concurrent requests can mix responses.
+
+The SDK resolves native error answers as well as successes. Check `answer.ok`; a native failure does not reject the SDK promise. A single-variable watch resolves to `undefined` after 30 seconds if no value arrives. That timeout does not cancel native work. Inspect the returned native envelope rather than assuming every command uses the same error shape.
+
+### A helper for concurrent extension calls
+
+Copy this app-owned helper to `despia-extension.js`. It uses the published SDK, a unique native callback function and a separate unique watched variable for each request. Native extension callbacks are functions; setting `callback` in the URL does not turn that callback name into an answer variable. The helper forwards the callback into the variable the SDK watches and removes both globals when finished.
+
+```javascript
+import despia from 'despia-native';
+
+// App helper, not an export from despia-native. Call only in the browser.
+export async function callExtension(command) {
+  const suffix = crypto.randomUUID().replace(/-/g, '');
+  const callbackKey = 'nxCallback' + suffix;
+  const watchKey = 'nxReply' + suffix;
+  const url = new URL(command);
+  url.searchParams.set('callback', callbackKey);
+  globalThis[callbackKey] = envelope => { globalThis[watchKey] = envelope; };
+  try {
+    const responses = await despia(url.toString(), [watchKey]);
+    const envelope = responses[watchKey];
+    if (envelope === undefined) throw new Error('No native reply within 30 seconds');
+    if (!envelope.ok) {
+      const error = new Error('Native extension request failed');
+      error.response = envelope;
+      throw error;
     }
-    ```
-**Callback**
-    Define the route's callback, then set `window.despia`:
+    return envelope.data;
+  } finally {
+    delete globalThis[callbackKey];
+    delete globalThis[watchKey];
+  }
+}
+```
 
-    ```javascript
-    window.onRecorderStart = (result) => {
-      if (result.ok) {
-        console.log(result.data.recordingId);
-      } else {
-        console.error(result.code, result.error);
-      }
-    };
+`callExtension` is a local helper, not a `despia-native` export. It returns the successful envelope's `data`. It throws when the SDK times out or native `ok` is false; native failures remain available on `error.response`. Each call watches one variable, so concurrent calls do not share reply state. The native route still has its own deadline and may continue after the SDK's 30-second wait.
 
-    window.despia = "extension://recorder/start?upload=" + encodeURIComponent(uploadUrl);
-    ```
-**Per-call callback**
-    Add `callback=<name>` to replace the route's callback for that one call:
+Variable and callback names must be valid JavaScript names of up to 64 characters, must not start with `__`, and must not be browser or runtime globals. The helper's generated names fit these rules.
 
-    ```javascript
-    window.onStatusOnce = (result) => console.log(result.data.state);
+### React
 
-    window.despia = "extension://recorder/status?id=" + id + "&callback=onStatusOnce";
-    ```
+Importing the SDK is safe during server rendering. Call it from a client event or lifecycle hook. In Next.js, put the component behind a client boundary.
 
-Variable and callback names must be valid JavaScript names of up to 64 characters, must not start with `__`, and must not be a browser or runtime global.
+```jsx
+'use client';
+import {useState} from 'react';
+import {callExtension} from './despia-extension.js';
+
+export function RecorderStatus() {
+  const [message, setMessage] = useState('');
+  async function readStatus() {
+    try {
+      const status = await callExtension('extension://recorder/status');
+      setMessage(status.state);
+    } catch (error) {
+      setMessage(error.message);
+    }
+  }
+  return <button onClick={readStatus}>{message || 'Read recording status'}</button>;
+}
+```
+
+### Vue
+
+The same helper works from a Vue click handler. For an automatic call, use `onMounted`, never server setup execution.
+
+```vue
+<script setup>
+import {ref} from 'vue';
+import {callExtension} from './despia-extension.js';
+const message = ref('');
+async function readStatus() {
+  try {
+    const status = await callExtension('extension://recorder/status');
+    message.value = status.state;
+  } catch (error) {
+    message.value = error.message;
+  }
+}
+</script>
+<template>
+  <button @click="readStatus">{{ message || 'Read recording status' }}</button>
+</template>
+```
+
+### Events
+
+Use the extension's state or journal routes to recover after page loads. Events are notifications, not a replay guarantee. Register the declared native callback before starting the operation, and remove your handler when its component unmounts:
+
+```javascript
+import despia from 'despia-native';
+
+const previous = despia.onRecorderState;
+const onState = recording => {
+  if (typeof previous === 'function') {
+    try { previous(recording); }
+    catch (error) { console.error('Previous recorder listener failed', error); }
+  }
+  console.log(recording.recordingId, recording.state);
+};
+globalThis.onRecorderState = onState;
+
+// Call this during component cleanup.
+function stopListening() {
+  if (globalThis.onRecorderState !== onState) return;
+  if (previous === undefined) delete globalThis.onRecorderState;
+  else globalThis.onRecorderState = previous;
+}
+```
+
+The SDK proxy reads existing browser properties such as `despia.onRecorderState`. It does not register event handlers when you assign to that proxy. Event registration above uses the native callback global explicitly; commands still go through the SDK. Run this registration only in the browser. The extension manifest defines each event's callback and scope.
 
 ## The result
 
@@ -82,7 +174,7 @@ An error carries a code and a message, and nothing else. If the page must tell f
 
 In an extension-enabled build, an unregistered extension or route answers an explicit `callback`; otherwise it fires `despia-feature-not-included`. A build without the runtime cannot answer. For missing responses, see `troubleshooting.md`.
 
-## Patterns the samples use
+## Patterns the extensions use
 
 The bridge answer is a JavaScript string with typed parameters. These conventions keep that workable.
 

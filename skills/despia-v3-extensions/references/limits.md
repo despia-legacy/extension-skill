@@ -5,7 +5,7 @@ Source: the published V3 Extensions page, https://setup.despia.com/experiments/v
 **Experimental. V3 only.**
 
   - V3 Extensions work only in Despia V3. They are never migrated to V4. V4 has its own first-party plugins and plugin system instead. You can stay on V3 as long as you want.
-  - You own and maintain the native code. That includes the code you copy from a sample.
+  - You own and maintain the native code. That includes the code you copy from an extension.
   - Despia provides the templates and the extension system. Despia does not support code you have customised.
   Calls are accepted only from the top-level page of your app's own HTTPS origin, or from origins you list in `bridge.allowed_origins`. Iframes, other origins, popups and page sheets get no answer.
 ## Platform limits to plan for

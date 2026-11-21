@@ -4,7 +4,7 @@ Source: the published V3 Extensions page, https://setup.despia.com/experiments/v
 
 ## The Android handler
 
-The manifest names the entry class in `android.entry_class`. It implements `com.despia.nativeext.NativeExtension`. From the recorder sample:
+The manifest names the entry class in `android.entry_class`. It implements `com.despia.nativeext.NativeExtension`. From the recorder extension:
 
 ```java android/recorder/java/despia/ext/recorder/RecorderExtension.java (excerpt)
 public final class RecorderExtension implements NativeExtension {
