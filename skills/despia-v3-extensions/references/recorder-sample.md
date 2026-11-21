@@ -1,6 +1,6 @@
 # Background Recorder sample notes
 
-Source: https://docs.despia.com/experiments/samples/recorder . The files are in examples/recorder/ (copy each to public/despia/recorder/<path>, except extensions.json which goes in public/despia/, and recorder.policy.json which is sent to Despia with the approval request and is not served).
+Source: https://setup.despia.com/experiments/samples/recorder . The files are in examples/recorder/ (copy each to public/despia/recorder/<path>, except extensions.json which goes in public/despia/, and recorder.policy.json which is sent to Despia with the approval request and is not served).
 
 This sample records audio from the microphone, keeps recording when the app goes to the background, and uploads the file to your server when recording stops. It shows its state in a Lock Screen widget on iOS, and in a foreground service notification and a home screen widget on Android.
 

@@ -5,7 +5,7 @@ description: Write a Despia V3 Extension, native Swift (iOS) and Kotlin or Java 
 
 # Despia V3 Extensions
 
-For the Despia V3 runtime only, and experimental. You write native files, describe them in a JSON manifest, and serve them from the web app. Despia approves the files and compiles them into a new native build. The page then calls `extension://name/route?<params>`. For compiler settings, Activity access, runtime permissions, route timeouts and SPA hosting, read `references/authoring.md`. All facts are in `references/`; read the file for the step you are on. Never invent manifest fields, types, hooks or error codes. If a fact is not in the references, say so and point to https://docs.despia.com/experiments/v3-extensions .
+For the Despia V3 runtime only, and experimental. You write native files, describe them in a JSON manifest, and serve them from the web app. Despia approves the files and compiles them into a new native build. The page then calls `extension://name/route?<params>`. For compiler settings, Activity access, runtime permissions, route timeouts and SPA hosting, read `references/authoring.md`. All facts are in `references/`; read the file for the step you are on. Never invent manifest fields, types, hooks or error codes. If a fact is not in the references, say so and point to https://setup.despia.com/experiments/v3-extensions .
 
 Before promising an installed feature or a successful regeneration, read `references/troubleshooting.md`. Hosting extension files and completing a regular Despia build do not enable the extension runtime. Confirm an approved extension build for the app; if availability is unknown, prepare the code and report the deployment requirement without claiming it works.
 
