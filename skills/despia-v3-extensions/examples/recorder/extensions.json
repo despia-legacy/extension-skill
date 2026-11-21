@@ -1,6 +1,6 @@
 {
   "app": {
-    "client_id": "com.example.app",
+    "client_id": "<your client id>",
     "ios_bundle_id": "com.example.app",
     "android_package": "com.example.app"
   },
