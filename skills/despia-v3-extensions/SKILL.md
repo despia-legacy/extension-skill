@@ -11,15 +11,15 @@ Before promising an installed feature or a successful regeneration, read `refere
 
 The web bridge is framework independent. React, Vue, Svelte, Next.js, TanStack and HTML5 apps use the same JavaScript calls. Lovable, Base44, Replit and other builders need custom JavaScript access and correct static-file hosting. Claude Code, Codex, Cursor or another editor can edit the repository. Calls run inside the installed Despia V3 app. Browser previews do not provide native extension features.
 
-Despia's ready-made extensions are private, proprietary and source available under a commercial license. With repository access, licensed users can clone them, keep private version-control copies or [fork privately where GitHub permits](https://docs.github.com/en/pull-requests/reference/forks), customize them and use them as references for new functionality in their licensed app. Local inspection copies require lawful access; other copying, modification, building, execution and deployment require a valid Despia commercial license for the particular app and operating system, plus a valid project for that app. Standard price: USD 249 per application per operating system, with separate iOS and Android licenses. Preserve each extension's LICENSE, copyright and third-party notices. Standalone redistribution is not permitted. Earlier grants and third-party rights remain intact. The skill instructions keep their own repository license; do not describe the extension code as open source.
+Despia's ready-made extensions have public source repositories and use a proprietary commercial license. Anyone may read the source, make inspection copies or create GitHub forks for inspection under the license. [Public GitHub forks remain public](https://docs.github.com/en/pull-requests/reference/forks). Licensed users can clone into private workspaces or private version-control repositories, customize the source and use it as a reference for new functionality in their licensed app. Other copying, modification, building, execution and deployment require a valid Despia commercial license for the particular app and operating system, plus a valid project for that app. Standard price: USD 249 per application per operating system, with separate iOS and Android licenses. Preserve each extension's LICENSE, copyright and third-party notices. Standalone redistribution is restricted except for GitHub forks expressly permitted by the license. Earlier grants and third-party rights remain intact. The skill instructions keep their own repository license; do not describe the extension code as open source.
 
 Use the ready-made Swift, Kotlin or Java source as a starting point or as a reference for new native capabilities. Keep the implementation within the supported extension contract and the platform APIs, signing, entitlements and store policies it needs. Declare new files, routes and dependencies, then obtain source approval and a new native build.
 
 | Extension | Source |
 | --- | --- |
-| Background Recorder | [GitHub](https://github.com/despia-legacy/despia-extension-recorder) |
-| Live Activities | [GitHub](https://github.com/despia-legacy/despia-extension-live-activities) |
-| Home Widgets | [GitHub](https://github.com/despia-legacy/despia-extension-home-widgets) |
+| Background Recorder | [GitHub](https://github.com/despia-legacy/recorder) |
+| Live Activities | [GitHub](https://github.com/despia-legacy/live-activities) |
+| Home Widgets | [GitHub](https://github.com/despia-legacy/home-widgets) |
 
 ## Workflow
 
