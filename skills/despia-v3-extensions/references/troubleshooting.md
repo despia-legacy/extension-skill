@@ -4,7 +4,7 @@
 
 Hosting is preparation, not activation. Confirm with Despia that the app has an approved extension build and install that artifact. A regular app build can complete successfully while including no extension runtime. Do not infer inclusion from a user agent string or from the presence of files on the website.
 
-Then check the exact extension folder name, declared route and callback. Use the Despia JS SDK and watch the exact declared answer variable, or use the per-call forwarding helper from `routes-and-answers.md`. Serialize requests that share a watched variable. Call from the trusted top-level app page, not an iframe, popup or page sheet. A native error resolves as an answer with `ok: false`; inspect it explicitly. The SDK's single-variable wait returns `undefined` after 30 seconds, which can also mean no native runtime was present. Silence is a symptom, not a unique diagnosis.
+Then check the exact extension folder name, declared route and callback. Use the Despia JS SDK and watch the exact declared answer variable. Serialize requests that share a watched variable. Call from the trusted top-level app page, not an iframe, popup or page sheet. A native error resolves as an answer with `ok: false`; inspect it explicitly. The SDK's single-variable wait returns `undefined` after 30 seconds, which can also mean no native runtime was present. Silence is a symptom, not a unique diagnosis.
 
 ## Does a successful build validate my extension?
 
