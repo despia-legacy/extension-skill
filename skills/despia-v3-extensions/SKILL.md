@@ -9,7 +9,7 @@ For the Despia V3 runtime only, and experimental. You write native files, descri
 
 Before promising an installed feature or a successful regeneration, read `references/troubleshooting.md`. Hosting extension files and completing a regular Despia build do not enable the extension runtime. Confirm an approved extension build for the app; if availability is unknown, prepare the code and report the deployment requirement without claiming it works.
 
-The web bridge is framework independent. React, Vue, Svelte, Next.js, TanStack and HTML5 apps use the same JavaScript calls. Lovable, Base44, Replit and other builders need custom JavaScript access and correct static-file hosting. Claude Code, Codex, Cursor or another editor can edit the repository. Do not claim every builder has been tested or that a browser preview runs native code.
+The web bridge is framework independent. React, Vue, Svelte, Next.js, TanStack and HTML5 apps use the same JavaScript calls. Lovable, Base44, Replit and other builders need custom JavaScript access and correct static-file hosting. Claude Code, Codex, Cursor or another editor can edit the repository. Calls run inside the installed Despia V3 app. Browser previews do not provide native extension features.
 
 Despia's extension samples are source available under a commercial license. Using or modifying them requires a valid Despia commercial license for the particular app and operating system, plus a valid project for that app. Standard price: USD 249 per application per operating system. Preserve each sample's LICENSE and third-party notices. The skill instructions keep their own repository license; do not describe the sample code as open source.
 
@@ -21,7 +21,7 @@ Despia's extension samples are source available under a commercial license. Usin
 4. Write the iOS handler (`references/ios.md`) and the Android handler (`references/android.md`). Answer every call once, with data or an error code and message.
 5. Declare native work as typed or custom (`references/manifest.md`). For CocoaPods, declare `ios.pods`, `ios.podfile_lock` and the measured `ios.pod_trees` closure (`references/manifest.md`). To use another library, name a Swift package (GitHub URL, full commit revision, products) under `ios.packages` with `ios.package_resolved` naming the complete pinned graph, or a Maven library with `implementation` in a custom Android module's `build.gradle`; approval must cover the dependency closure; a root URL or coordinate alone is not enough (`references/manifest.md`, "Adding a Swift package or a Maven library").
 6. Write the web call and its answer handling (`references/routes-and-answers.md`).
-7. Choose a sample when a template helps: Background Recorder (`examples/recorder/`, `references/recorder-sample.md`), Live Activities (`references/live-activities-sample.md`) or Home Widgets (`references/home-widgets-sample.md`). Read its tested results and platform limits before copying it.
+7. Choose a sample when a template helps: Background Recorder (`examples/recorder/`, `references/recorder-sample.md`), Live Activities (`references/live-activities-sample.md`) or Home Widgets (`references/home-widgets-sample.md`). Read its API and platform limits before copying it.
 8. Tell the user the approval flow: Despia approves `extensions.json` and every referenced file, each `manifest.json` included. Any change needs a new approval and a new native build, never over-the-air. Extensions are enabled per app by Despia. The user owns and maintains the native code; Despia does not support customised code.
 
 ## Rules
