@@ -24,7 +24,7 @@ Despia's extension samples are source available under a commercial license. Usin
 7. Choose a sample when a template helps: Background Recorder (`examples/recorder/`, `references/recorder-sample.md`), Live Activities (`references/live-activities-sample.md`) or Home Widgets (`references/home-widgets-sample.md`). Read its API and platform limits before copying it.
 8. Tell the user the approval flow: Despia approves `extensions.json` and every referenced file, each `manifest.json` included. Any change needs a new approval and a new native build, never over-the-air. Extensions are enabled per app by Despia. The user owns and maintains the native code; Despia does not support customised code.
 
-For advertiser SDK source previews, read `references/meta-ads-sample.md` and `references/tiktok-ads-sample.md`. For device calendars and platform methods, read `references/calendar-sample.md`. For iOS ATT request and status callbacks, read `references/tracking-consent.md`.
+For advertiser SDK source previews, read `references/meta-ads-sample.md`, `references/tiktok-ads-sample.md` and `references/google-ads-sample.md`. For device calendars and platform methods, read `references/calendar-sample.md`. For iOS ATT request and status callbacks, read `references/tracking-consent.md`.
 
 ## Rules
 
