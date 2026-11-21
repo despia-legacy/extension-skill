@@ -1,6 +1,6 @@
 # Layout, manifest and native work
 
-Source: the published V3 Extensions page, https://docs.despia.com/experiments/v3-extensions (Experimental, Despia V3 only).
+Source: the published V3 Extensions page, https://setup.despia.com/experiments/v3-extensions (Experimental, Despia V3 only).
 
 **Requires an extension-enabled build.** Files hosted under /despia/ are preparation only. A regular app build does not fetch or compile them automatically. Despia must confirm app availability and approve the files and dependency closure. A completed normal build is not an extension code check. Read `troubleshooting.md` before promising a regeneration will include the code.
 
