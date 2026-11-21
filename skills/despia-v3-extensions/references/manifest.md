@@ -1,0 +1,131 @@
+# Layout, manifest and native work
+
+Source: the published V3 Extensions page, https://docs.despia.com/experiments/v3-extensions (Experimental, Despia V3 only).
+
+V3 Extensions let you add your own native code to a Despia V3 app. You write the Swift (iOS) and Kotlin or Java (Android) files, describe them in a JSON manifest, and serve them from your web app. Despia builds them into your app. Your web code then calls them with one scheme:
+
+```javascript
+window.despia = "extension://recorder/start?upload=" + encodeURIComponent(uploadUrl);
+```
+
+Use V3 Extensions when you need a native capability that Despia does not offer as a feature yet, or when you need full control over the native code. The [Samples](/experiments/samples/recorder) are complete templates you can copy and change.
+## How it works
+
+- **The manifest declares the extension.**
+    Each extension has a `manifest.json`. It declares the extension id, its routes, the typed parameters of each route, the answer variable and callback of each route, its events, and the native files for each platform.
+- **Despia builds it into your app.**
+    Your files are served from your app's own HTTPS origin. Despia reads them and compiles them into a new native build of your app. Extensions are enabled per app by Despia. Any change to the manifest or to a native file needs to be approved again and needs a new native build. It cannot be applied over-the-air.
+- **Your web app calls a route.**
+    The page sends `extension://<id>/<route>?<params>`. The runtime first checks the call: the extension and route exist, only declared parameters are present, and each value has the declared type. Only then does it call your native handler.
+- **The answer comes back once.**
+    Every call answers exactly once, in the page that made it. The runtime sets the route's answer variable on `window` and then calls the route's callback with it.
+
+## Folder layout in your web app
+
+Put the files in your web app's `public` folder, so they are served from your app's own origin:
+
+```text
+public/despia/
+├── extensions.json              # your app identity and the list of extension folders
+└── recorder/                    # one folder per extension; the folder name is the extension id
+    ├── manifest.json            # routes, parameters, outputs, events and native files
+    ├── ios/
+    │   └── ...                  # Swift sources and targets
+    └── android/
+        └── ...                  # Java or Kotlin sources and resources
+```
+
+`extensions.json` names your app and lists the extension folders:
+
+```json public/despia/extensions.json
+{
+  "manifest_version": 1,
+  "app": {
+    "client_id": "<your client id>",
+    "ios_bundle_id": "com.example.app",
+    "android_package": "com.example.app"
+  },
+  "extensions": ["recorder"]
+}
+```
+
+`extensions.json` holds the app identity (`client_id`, `ios_bundle_id` and `android_package`) and lists the extension folders. It lists 1 to 8 folders, and each folder name matches `[a-z][a-z0-9]{1,23}`. Any other key is refused, and so is a folder listed twice.
+
+The folder name is the id in the scheme. `public/despia/recorder/` is called as `extension://recorder/<route>`. File paths in `manifest.json` are relative to the extension's folder and start with `ios/` or `android/`, for example `ios/app/RecorderExtension.swift`. An extension can only name files inside its own folder. A `manifest.json` that also sets `"id"` is refused, because the folder name is the id.
+
+To add a sample to your app, copy its folder under `public/despia/` and add its name to `extensions.json`. Despia approves `extensions.json` and every other file, each `manifest.json` included. A change to any of them needs a new approval.
+
+  Calls are accepted only from the top-level page of your app's own HTTPS origin, or from origins you list in `bridge.allowed_origins`. Iframes, other origins, popups and page sheets get no answer.
+
+## Declaring routes, outputs and events
+
+Each route in `manifest.json` declares its parameters and its output. The output names the `window` variable that receives the answer and the callback that is called with it:
+
+```json public/despia/recorder/manifest.json (excerpt)
+{
+  "name": "start",
+  "params": {
+    "upload": {
+      "type": "https_url",
+      "hosts": ["upload.example.com"],
+      "required": true
+    }
+  },
+  "output": {
+    "variable": "recorderStart",
+    "callback": "onRecorderStart"
+  }
+}
+```
+
+For this route the runtime runs `window.recorderStart = <result>` and then `window.onRecorderStart(window.recorderStart)`.
+
+If you leave `output` out, the defaults are `<id><Route>Result` for the variable and `on<Id><Route>Result` for the callback. For the route above that would be `recorderStartResult` and `onRecorderStartResult`.
+
+Events are declared next to the routes, each with its own callback:
+
+```json
+"events": [
+  { "name": "state", "callback": "onRecorderState", "scope": "document" }
+]
+```
+
+Your native code sends an event with `emit("state", data)`, and the page's `window.onRecorderState(data)` runs. With `scope: "document"` (the default), only pages that have called the extension receive it. With `scope: "app"`, the trusted top-level page that is loaded receives it. Events are notifications only. Always read the current state through a route.
+
+### Parameter types
+
+Parameters are declared per route. Anything not declared is refused with `bad_request`.
+
+| Type        | Value                                                    |
+| ----------- | -------------------------------------------------------- |
+| `string`    | Text, with an optional `max` length                      |
+| `int`       | Whole number                                             |
+| `bool`      | `true` or `false`                                        |
+| `enum`      | One of a declared list of values                         |
+| `https_url` | An `https` URL whose host is in the route's `hosts` list |
+
+An `int` may declare `min` and `max` anywhere in the range -(2^53-1) to 2^53-1 (the default is -2^31 to 2^31-1), and a value outside it is refused. A `string`'s `max` is at most 4096.
+
+Keep large data on the native side and pass identifiers through the bridge. A call URL is at most 8192 characters, and each extension accepts up to 20 calls per second.
+## Declaring native work
+
+Both ways are declared in an extension's `manifest.json`.
+
+- **Typed.** On iOS, `targets[].kind` is a preset: `widgetkit`, `notification-service`, `notification-content`, `share` or `intents`. On Android, a module with `kind: "typed"` lists sources, resources, permissions and components (`service`, `receiver`, `provider`, `activity`) from a fixed vocabulary, and the build writes the Gradle file and manifest.
+- **Custom.** On iOS, `kind: "custom"` takes a product type, build settings, script phases, a full `info_plist`, `entitlements`, link targets and packages. On Android, `kind: "custom"` points `dir` at your own module with its own `build.gradle`, `AndroidManifest.xml`, sources and resources.
+
+Your build logic runs in an offline compile job, so dependencies must be pinned files in the approval. Nothing is downloaded at build time.
+
+Both ways may also declare:
+
+- **Android `min_sdk`** (21 to 36, typed modules). The module builds at that level. On a device below it, the extension is never created and every route answers `platform_limit`.
+- **Android `meta_data`.** Application `<meta-data>` entries, each a `name` and exactly one of `value` or `resource`. A name the app already declares, or another extension declares, is refused. Keep account values in your config, not in a public repository.
+- **iOS `packages[].weak: true`.** Every product of that package is linked as optional, so an app whose deployment target is below the package's minimum still launches. Guard its use with `#available`.
+
+Files are accepted by type: source and text formats, assets and binaries. Every file must be named in its `manifest.json`, and an unreferenced file is refused. Hidden files (names that start with a dot) are always refused. Binaries need approval.
+
+## What the build owns
+
+You cannot set these. The build sets them for you: bundle id and package name, versions, team and signing, URL types, App Transport Security, purpose strings and permissions your app already sets in Despia (declare them under `requires`), and push and associated-domain entitlements. App Groups are logical names. A group named `nativeext` becomes `group.<bundle id>.nx.nativeext`.
+
+Build errors in your files are reported by their served path, `<extension>/<ios|android>/<your path>:<line>:<column>`, for example `recorder/ios/app/RecorderExtension.swift:42:17`. Secrets, tokens and build machine paths are redacted.

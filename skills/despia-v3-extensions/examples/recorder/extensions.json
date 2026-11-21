@@ -1,0 +1,10 @@
+{
+  "app": {
+    "client_id": "com.example.app",
+    "ios_bundle_id": "com.example.app",
+    "android_package": "com.example.app"
+  },
+  "extensions": [
+    "recorder"
+  ]
+}
