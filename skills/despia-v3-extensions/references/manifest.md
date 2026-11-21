@@ -138,7 +138,7 @@ Both ways are declared in an extension's `manifest.json`.
 
 Declare dependencies and include their required graph files. Approval covers the pinned dependency closure as part of an extension build. A package URL or Maven coordinate alone does not enable the extension or complete its approval. Manually copying library binaries is not required.
 
-**iOS: a Swift package from GitHub.** List it under `ios.packages` in `manifest.json` with its GitHub URL, the full commit `revision` of the release you want, and the products you use. Then link the product in your app target under `ios.app.packages`. From the Stream calling template:
+**iOS: a Swift package from GitHub.** List it under `ios.packages` in `manifest.json` with its GitHub URL, the full commit `revision` of the release you want, and the products you use. Then link the product in your app target under `ios.app.packages`. Custom module example:
 
 ```json
 {

@@ -1,6 +1,6 @@
 # Alarms extension
 
-Source preview. Native integration and runtime changes are under review; hosted extension support is pending deployment. An approved extension-enabled native build is required.
+Source preview. Native integration and runtime changes are under review; hosted extension support is pending deployment. An approved extension-enabled native build is required. iOS alarm delivery is not yet tested on devices.
 
 Alarms adds native alarms, timers and app-reported challenge workflows to a Despia V3 app. System alarms use AlarmKit on iOS 26 and later, including a countdown WidgetKit target. Android uses AlarmManager and a foreground audio service. Your app supplies the challenge UI and any exercise, scanning or other detection logic.
 
