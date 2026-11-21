@@ -8,7 +8,11 @@ The page only ever sees a recording id and its state. The audio never crosses th
 
 **Experimental. V3 only.** This is a template, not a Despia feature. It is never migrated to V4. You own and maintain this code once it is in your app. Despia does not support customised code. Read [V3 Extensions](/experiments/v3-extensions) first.
 
-**Tested on:** an iPhone 15, an Android emulator and a Samsung Galaxy S21.
+**Tested on:** an iPhone 15 and a Samsung Galaxy S21.
+
+## Build prerequisite
+
+Confirm an approved extension-enabled build for the app before promising installation. Hosting the files and completing a regular app build do not add the runtime or validate this source. See `troubleshooting.md`.
 
 ## Files
 
