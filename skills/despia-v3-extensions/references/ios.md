@@ -1,6 +1,6 @@
 # The iOS handler
 
-Source: the published V3 Extensions page, https://docs.despia.com/experiments/v3-extensions (Experimental, Despia V3 only).
+Source: the published V3 Extensions page, https://setup.despia.com/experiments/v3-extensions (Experimental, Despia V3 only).
 
 ## The iOS handler
 
