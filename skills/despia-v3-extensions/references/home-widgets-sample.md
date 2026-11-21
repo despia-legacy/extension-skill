@@ -2,7 +2,7 @@
 
 Documentation: https://setup.despia.com/experiments/samples/home-widgets
 
-Source: [Home Widgets repository](https://github.com/despia-legacy/despia-extension-home-widgets) (private access required). Read its [LICENSE](https://github.com/despia-legacy/despia-extension-home-widgets/blob/main/LICENSE) before using or modifying the extension.
+Source: [Home Widgets repository](https://github.com/despia-legacy/home-widgets). Read its [LICENSE](https://github.com/despia-legacy/home-widgets/blob/main/LICENSE) before using or modifying the extension.
 
 This extension puts data from your web app into native home-screen widgets. It includes a stat card and a list with buttons and checkboxes. The page sets and reads the widget data, reloads the extension's widgets, lists installed widgets and reads queued taps.
 
