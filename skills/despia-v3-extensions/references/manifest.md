@@ -7,10 +7,19 @@ Source: the published V3 Extensions page, https://setup.despia.com/experiments/v
 V3 Extensions let you add your own native code to a Despia V3 app. You write the Swift (iOS) and Kotlin or Java (Android) files, describe them in a JSON manifest, and serve them from your web app. Despia builds them into your app. Your web code calls them with the Despia JS SDK from a client event:
 
 ```javascript
-window.despia = "extension://recorder/start?upload=" + encodeURIComponent(uploadUrl);
+import despia from 'despia-native';
+
+// Run from a browser click handler or client lifecycle hook.
+async function readRecorderStatus() {
+  const responses = await despia('extension://recorder/status', ['recorderStatus']);
+  const answer = responses.recorderStatus;
+  if (answer === undefined) throw new Error('No native reply within 30 seconds');
+  if (!answer.ok) throw new Error(JSON.stringify(answer.error ?? answer));
+  return answer.data;
+}
 ```
 
-Use V3 Extensions when you need a native capability that Despia does not offer as a feature yet, or when you need full control over the native code. The [Samples](/experiments/samples/recorder) are complete templates you can copy and change.
+Use V3 Extensions when you need a native capability that Despia does not offer as a feature yet, or when you need full control over the native code. The [ready-made extensions](/experiments/samples/recorder) include source you can copy and customize.
 
 ## How it works
 
@@ -56,7 +65,7 @@ Despia takes app identity from the existing build configuration. You do not copy
 
 The folder name is the id in the scheme. `public/despia/recorder/` is called as `extension://recorder/<route>`. File paths in `manifest.json` are relative to the extension's folder and start with `ios/` or `android/`, for example `ios/app/RecorderExtension.swift`. An extension can only name files inside its own folder. A `manifest.json` that also sets `"id"` is refused, because the folder name is the id.
 
-To add a sample to your app, copy its folder under `public/despia/` and add its name to `extensions.json`. Despia approves `extensions.json` and every other file, each `manifest.json` included. A change to any of them needs a new approval.
+To add an extension to your app, copy its folder under `public/despia/` and add its name to `extensions.json`. Despia approves `extensions.json` and every other file, each `manifest.json` included. A change to any of them needs a new approval.
 
   Calls are accepted only from the top-level page of your app's own HTTPS origin, or from origins you list in `bridge.allowed_origins`. Iframes, other origins, popups and page sheets get no answer.
 
