@@ -1,6 +1,6 @@
 # Home Widgets extension
 
-Source: https://setup.despia.com/experiments/extensions/home-widgets
+Source: https://setup.despia.com/experiments/samples/home-widgets
 
 This extension puts data from your web app into native home-screen widgets. It includes a stat card and a list with buttons and checkboxes. The page sets and reads the widget data, reloads the extension's widgets, lists installed widgets and reads queued taps.
 

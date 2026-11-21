@@ -1,6 +1,6 @@
 # Live Activities extension
 
-Source: https://setup.despia.com/experiments/extensions/live-activities
+Source: https://setup.despia.com/experiments/samples/live-activities
 
 This extension starts, updates, ends and lists native activities from your web app. It includes delivery, score and timer templates. On iOS it uses ActivityKit for the Lock Screen and Dynamic Island. On Android it uses ongoing notifications, with Live Updates on Android 16 and later when the system allows promotion.
 

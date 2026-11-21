@@ -4,7 +4,7 @@ Source: the published V3 Extensions page, https://setup.despia.com/experiments/v
 
 **Requires an extension-enabled build.** Files hosted under /despia/ are preparation only. A regular app build does not fetch or compile them automatically. Despia must confirm app availability and approve the files and dependency closure. A completed normal build is not an extension code check. Read `troubleshooting.md` before promising a regeneration will include the code.
 
-V3 Extensions let you add your own native code to a Despia V3 app. You write the Swift (iOS) and Kotlin or Java (Android) files, describe them in a JSON manifest, and serve them from your web app. Despia builds them into your app. Your web code then calls them with one scheme:
+V3 Extensions let you add your own native code to a Despia V3 app. You write the Swift (iOS) and Kotlin or Java (Android) files, describe them in a JSON manifest, and serve them from your web app. Despia builds them into your app. Your web code calls them with the Despia JS SDK from a client event:
 
 ```javascript
 import despia from 'despia-native';
@@ -19,7 +19,7 @@ async function readRecorderStatus() {
 }
 ```
 
-Use V3 Extensions when you need a native capability that Despia does not offer as a feature yet, or when you need full control over the native code. The [Extensions](/experiments/samples/recorder) are complete templates you can copy and change.
+Use V3 Extensions when you need a native capability that Despia does not offer as a feature yet, or when you need full control over the native code. The [ready-made extensions](/experiments/samples/recorder) include source you can copy and customize.
 
 ## How it works
 

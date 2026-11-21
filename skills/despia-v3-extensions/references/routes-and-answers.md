@@ -119,7 +119,13 @@ Use the extension's state or journal routes to recover after page loads. Events 
 import despia from 'despia-native';
 
 const previous = despia.onRecorderState;
-const onState = recording => console.log(recording.recordingId, recording.state);
+const onState = recording => {
+  if (typeof previous === 'function') {
+    try { previous(recording); }
+    catch (error) { console.error('Previous recorder listener failed', error); }
+  }
+  console.log(recording.recordingId, recording.state);
+};
 globalThis.onRecorderState = onState;
 
 // Call this during component cleanup.
