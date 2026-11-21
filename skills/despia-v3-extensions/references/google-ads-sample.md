@@ -1,4 +1,4 @@
-# Google Ads sample
+# Google Ads extension
 
 Source preview. Runtime changes and hosted extension support are pending deployment. An approved extension-enabled native build is required. Read `references/troubleshooting.md` before preparing a build.
 
@@ -36,17 +36,22 @@ ATT permission is separate. The extension does not request ATT or treat Firebase
 
 ## Calls
 
-Register the callback before calling a route. Encode each parameter value and wait for a result before making a dependent call.
+Use the app-local `callExtension` helper from `references/routes-and-answers.md` (helper source: `examples/web/despia-extension.js`). Run this from a client event after your consent flow has an answer:
 
 ```javascript
-window.onGoogleAds = result => console.log(result);
-window.despia = "extension://googleads/configure?callback=onGoogleAds";
-// After configure succeeds and your consent flow has an answer:
-window.despia = "extension://googleads/consent?enabled=true&ad_storage=false&ad_user_data=false&ad_personalization=false&callback=onGoogleAds";
-// After consent succeeds:
-window.despia = "extension://googleads/event?name=generate_lead&properties="
-  + encodeURIComponent(JSON.stringify({currency: "USD", value: 12.5}))
-  + "&callback=onGoogleAds";
+import {callExtension} from './despia-extension.js';
+
+async function reportLead(hasAnalyticsConsent) {
+  await callExtension('extension://googleads/configure');
+  const consent = new URLSearchParams({
+    enabled: String(hasAnalyticsConsent), ad_storage: 'false',
+    ad_user_data: 'false', ad_personalization: 'false'
+  });
+  await callExtension('extension://googleads/consent?' + consent);
+  if (!hasAnalyticsConsent) return;
+  return callExtension('extension://googleads/event?name=generate_lead&properties='
+    + encodeURIComponent(JSON.stringify({currency: 'USD', value: 12.5})));
+}
 ```
 
 | Route | Parameters | Successful payload |

@@ -1,4 +1,4 @@
-# Meta Ads sample, prepared V3 reference
+# Meta Ads extension, prepared V3 reference
 
 Publication and runtime hold: these source previews require the app changes, backend purpose/ATT settings where used, and an approved extension build path. Do not promise that a regular generation installs them. Read references/troubleshooting.md first.
 
@@ -14,7 +14,7 @@ For the Despia V3 runtime. First-party V4 support comes through the new package 
 
 Call the Despia V3 extension bridge from your app's JavaScript. It is independent
 of the web UI framework: React, Vue, Svelte, Next.js, TanStack and HTML5 apps use
-the same `window.despia = "extension://..."` interface.
+the same Despia JS SDK commands from client lifecycle hooks or click handlers.
 
 For Lovable, Base44, Replit or another app builder, use a project that lets you
 add custom JavaScript and serve the extension files at their exact HTTPS paths.
@@ -33,17 +33,24 @@ The Swift package is pinned to commit 7c3fb7856063fa1074d330616f4070f2ed10a49b. 
 
 ## Call from the page
 
-```javascript
-window.onMetaadsConfigureResult = result => console.log(result);
-window.despia = "extension://metaads/configure";
-// After the user's collection choice, enable the operations you need:
-window.despia = "extension://metaads/consent?enabled=true&advertiser_id=false&automatic_events=false";
-window.despia = "extension://metaads/activate";
-window.despia = "extension://metaads/event?name=" + encodeURIComponent("fb_mobile_complete_registration")
-  + "&properties=" + encodeURIComponent(JSON.stringify({registration_method: "email"}));
-```
+Use the app-local `callExtension` helper from `references/routes-and-answers.md` (helper source: `examples/web/despia-extension.js`). Call this after the person makes the collection choice in your browser UI:
 
-Wait for each route's successful answer before calling the next one. The default answer is `window.metaads<Route>Result` and callback `onMetaads<Route>Result`, with the route name capitalized. All results use the V3 bridge envelope.
+```javascript
+import {callExtension} from './despia-extension.js';
+
+async function reportRegistration(hasAnalyticsConsent) {
+  await callExtension('extension://metaads/configure');
+  const consent = new URLSearchParams({
+    enabled: String(hasAnalyticsConsent), advertiser_id: 'false', automatic_events: 'false'
+  });
+  await callExtension('extension://metaads/consent?' + consent);
+  if (!hasAnalyticsConsent) return;
+  await callExtension('extension://metaads/activate');
+  return callExtension('extension://metaads/event?name='
+    + encodeURIComponent('fb_mobile_complete_registration')
+    + '&properties=' + encodeURIComponent(JSON.stringify({registration_method: 'email'})));
+}
+```
 
 | Route | Parameters | Successful data |
 | --- | --- | --- |
