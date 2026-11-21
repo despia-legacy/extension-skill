@@ -168,7 +168,7 @@ Swift packages come from `github.com` over https. Remote packages require `ios.p
 }
 ```
 
-This is an illustrative manifest excerpt, not a tested app. Replace `<installed-tree-sha256>` with the measured 64-character lowercase hexadecimal digest. The lockfile must contain the declared version, a spec checksum for every resolved root pod, and the complete dependency closure. Add a tree digest for every root pod in that closure, not just the direct dependency. The build checks the installed trees and preserves the base app's existing pods. This CocoaPods example is not yet tested on a device.
+This is an illustrative manifest excerpt. Replace `<installed-tree-sha256>` with the measured 64-character lowercase hexadecimal digest for each root pod in the complete lockfile closure. Include the declared versions and spec checksums. The build checks the installed trees and preserves the base app's existing pods.
 
 **Android: a Maven library.** Add a `custom` module in `manifest.json` that points at your own module folder, and list the libraries in that module's `build.gradle` with `implementation`, the same way as in Android Studio:
 
