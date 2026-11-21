@@ -2,7 +2,7 @@
 
 An Agent Skill that teaches an AI coding agent to write a Despia V3 Extension: native Swift and Kotlin or Java code called from a V3 web-view app with `extension://<name>/<route>`. It is for the Despia V3 runtime only, and V3 Extensions are experimental. First-party V4 support comes through the new package registry.
 
-The skill is self-contained: `skills/despia-v3-extensions/SKILL.md` is the workflow, `references/` holds the facts from the published docs, and `examples/recorder/` holds the Background Recorder sample files. Docs: https://docs.despia.com/experiments/v3-extensions
+The skill is self-contained: `skills/despia-v3-extensions/SKILL.md` is the workflow, `references/` holds the manifest, bridge and platform facts plus Background Recorder, Live Activities and Home Widgets references. `examples/recorder/` holds the Background Recorder sample files. The Live Activities and Home Widgets references include their routes, answers, platform limits and recorded test results. Docs: https://docs.despia.com/experiments/v3-extensions
 
 ## Install
 
