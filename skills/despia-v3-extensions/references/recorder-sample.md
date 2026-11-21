@@ -1,6 +1,6 @@
 # Background Recorder extension notes
 
-Documentation: https://setup.despia.com/experiments/samples/recorder . The files are in examples/recorder/ (copy each to public/despia/recorder/<path>, except extensions.json which goes in public/despia/, and recorder.policy.json which is sent to Despia with the approval request and is not served).
+Documentation: https://setup.despia.com/experiments/samples/recorder . The files are in examples/recorder/ (copy each to public/despia/recorder/<path>, except extensions.json which goes in public/despia/, and recorder.policy.json which belongs to the trusted build inputs and is not served).
 
 Source: [Background Recorder repository](https://github.com/despia-legacy/recorder). Read its [LICENSE](https://github.com/despia-legacy/recorder/blob/main/LICENSE) before using or modifying the extension.
 
@@ -12,7 +12,7 @@ The page only ever sees a recording id and its state. The audio never crosses th
 
 ## Build prerequisite
 
-Confirm an approved extension-enabled build for the app before promising installation. Hosting the files and completing a regular app build do not add the runtime or validate this source. See `troubleshooting.md`.
+Extension files must be compiled into a rebuilt native app. Uploading files does not change an installed binary. Automatic discovery of hosted `/despia/extensions.json` during a normal rebuild is under review and is not yet confirmed in deployed builds. See `troubleshooting.md`.
 
 ## Files
 
@@ -22,7 +22,7 @@ Before you build, change these values to your own:
 
 - the upload host `upload.example.com` in both `hosts` lists in `manifest.json`.
 
-The approval policy is a file you send to Despia with your approval request. It is not served from your site. Despia reviews and approves these exact files before a build includes them.
+The build policy is part of the trusted build inputs and is not served from your site. Signed-source checks verify the exact files and dependency graph; artifact checks verify the build before signing. You own the behavior and maintenance of your native code.
 
 ## Permissions and capabilities
 
