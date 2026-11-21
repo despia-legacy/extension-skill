@@ -22,4 +22,6 @@ cp -R extension-skill/skills/despia-v3-extensions .claude/skills/
 
 ## License
 
-Apache License 2.0, see LICENSE.
+The skill instructions use Apache License 2.0, see [LICENSE](LICENSE).
+
+The Despia-authored extension sample code in `skills/despia-v3-extensions/examples/recorder/` uses the [Despia V3 Extension Source-Available Commercial License](skills/despia-v3-extensions/examples/recorder/LICENSE). You may inspect the source. Using or modifying the sample requires a valid Despia commercial license for the particular application and operating system, plus a valid Despia project for that app. Standard price: USD 249 per application per operating system. Third-party licenses and permissions already granted for earlier releases remain intact.
