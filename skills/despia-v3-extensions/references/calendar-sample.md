@@ -1,6 +1,6 @@
 # Calendar extension, prepared V3 reference
 
-Publication and runtime hold: these source previews require the app changes, backend purpose/ATT settings where used, and an approved extension build path. Do not promise that a regular generation installs them. Read references/troubleshooting.md first.
+Publication and runtime hold: these source previews require the app changes and an approved extension build path. Do not promise that a regular generation installs them. Read references/troubleshooting.md first.
 
 Source repository: [Calendar](https://github.com/despia-legacy/calendar). This repository is private; access is required to read or copy its files.
 
@@ -8,7 +8,7 @@ A Despia V3 extension over iOS EventKit and the Android Calendar Provider. Share
 
 For the Despia V3 runtime. First-party V4 support comes through the new package registry.
 
-**Source preview.** Runtime changes, editor settings and hosted extension support are pending deployment. An approved extension-enabled native build is required.
+**Source preview.** Runtime changes and hosted extension support are pending deployment. An approved extension-enabled native build is required.
 
 ## Web frameworks and app builders
 
@@ -26,7 +26,7 @@ app. A browser preview alone does not provide native extension features.
 
 1. Copy manifest.json, ios/ and android/ to public/despia/calendar/ in your web app.
 2. Add calendar to public/despia/extensions.json. The prepared minimal index is `{ "extensions": ["calendar"] }`; use it only after the no-app-identity runtime reaches your build. Existing matching legacy identity blocks remain compatible. Do not add manifest_version to the index.
-3. Enable calendar_usage in Despia's permissions. The prepared host emitter maps it to legacy, full-access and write-only iOS calendar descriptions. For the complete iOS extension, also supply DESPIA_NX_REMINDERS_USAGE, mapped to both reminders descriptions. The backend schema and editor deployment for that new child are pending. Purpose strings cannot be placed in ios.app.info_plist by this extension.
+3. Supply purpose text for the five keys in `ios.app.requires.usage_descriptions`: `NSCalendarsUsageDescription`, `NSCalendarsFullAccessUsageDescription`, `NSCalendarsWriteOnlyAccessUsageDescription`, `NSRemindersUsageDescription` and `NSRemindersFullAccessUsageDescription`. Existing app configuration may provide them. With the prepared runtime change, add approved nonempty fallback values under `ios.app.info_plist` and set `ios.app.custom_keys: true`. Nonempty app-configured text wins. No new dashboard or Xano field is needed for these framework purpose strings.
 4. Send calendar.policy.json with the approval request. It declares the Android READ_CALENDAR and WRITE_CALENDAR permission additions. These declarations are separate from the user's runtime consent. The policy file is not served from your site.
 5. Approve the source and rebuild through the extension-enabled path, then install that artifact.
 

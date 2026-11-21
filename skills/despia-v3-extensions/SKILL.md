@@ -24,11 +24,11 @@ Despia's ready-made extensions are source available under a commercial license. 
 7. Choose a ready-made extension when it fits: Background Recorder (`examples/recorder/`, `references/recorder-sample.md`), Live Activities (`references/live-activities-sample.md`) or Home Widgets (`references/home-widgets-sample.md`). Read its API and platform limits before copying it.
 8. Tell the user the approval flow: Despia approves `extensions.json` and every referenced file, each `manifest.json` included. Any change needs a new approval and a new native build, never over-the-air. Extensions are enabled per app by Despia. The user owns and maintains the native code; Despia does not support customised code.
 
-For advertiser SDK source previews, read `references/meta-ads-sample.md`, `references/tiktok-ads-sample.md` and `references/google-ads-sample.md`. For device calendars and platform methods, read `references/calendar-sample.md`. For iOS ATT request and status callbacks, read `references/tracking-consent.md`.
+For advertiser SDK source previews, read `references/meta-ads-sample.md`, `references/tiktok-ads-sample.md` and `references/google-ads-sample.md`. For device calendars and platform methods, read `references/calendar-sample.md`. For iOS ATT request and status callbacks, read `references/tracking-consent.md`. For alarms and timers, read `references/alarms.md`; for app/domain focus groups and schedules, read `references/app-lock.md`. These source previews remain under review.
 
 ## Rules
 
-- Never set what the build owns (bundle id, versions, signing, URL types, App Transport Security, purpose strings and permissions set in Despia, push and associated-domain entitlements). See `references/manifest.md`.
+- Preserve build-owned identity, signing, URL types, push and associated-domain entitlements. Use existing app purpose text first, or the prepared approved `custom_keys` purpose fallback described in `references/manifest.md`. Do not invent a dashboard/Xano field for each Apple framework.
 - Every file must be covered by its `manifest.json`. Custom Android module directories cover their approved trees recursively. Hidden files are refused. Keep large data native and pass identifiers through the bridge.
 - Do not claim V4 support. First-party V4 support comes through the new package registry.
 

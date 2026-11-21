@@ -211,6 +211,27 @@ Files are accepted by type: source and text formats, assets and binaries. Every 
 
 ## What the build owns
 
-You cannot set these. The build sets them for you: bundle id and package name, versions, team and signing, URL types, App Transport Security, purpose strings and permissions your app already sets in Despia (declare them under `requires`), and push and associated-domain entitlements. App Groups are logical names. A group named `nativeext` becomes `group.<bundle id>.nx.nativeext`.
+The build owns bundle id and package name, versions, team and signing, URL types, push and associated-domain entitlements. Existing app permissions and capabilities remain part of the app configuration. App Groups are logical names: `nativeext` becomes `group.<bundle id>.nx.nativeext`. Approved extension purpose text can supply a fallback as described below.
+
+
+### Approved iOS purpose text
+
+Prepared runtime change, pending deployment: an extension may supply a nonempty `NS...UsageDescription` string in `ios.app.info_plist` with `ios.app.custom_keys: true`. For example, add these fields to the existing `ios.app` declaration:
+
+```json
+{
+  "custom_keys": true,
+  "info_plist": {
+    "NSAlarmKitUsageDescription": "Schedule the alarms and timers you create in this app."
+  },
+  "requires": {
+    "usage_descriptions": ["NSAlarmKitUsageDescription"]
+  }
+}
+```
+
+Nonempty purpose text from the app's build configuration wins. An absent key or a blank string uses the approved extension fallback. A required or declared purpose value must be a nonempty string; an invalid non-string app value is not silently replaced. If several extensions supply the same fallback, the first in the signed `extensions.json` order wins.
+
+This uses the existing manifest fields and needs no new dashboard or Xano field for each Apple framework. It does not grant system authorization, enable a disabled native feature or change signing. Approval still binds the exact source, app identity, manifest and dependency contract; final artifact checks remain exact.
 
 Build errors in your files are reported by their served path, `<extension>/<ios|android>/<your path>:<line>:<column>`, for example `recorder/ios/app/RecorderExtension.swift:42:17`. Secrets, tokens and build machine paths are redacted.
