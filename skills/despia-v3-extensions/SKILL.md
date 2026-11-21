@@ -20,6 +20,12 @@ Use the ready-made Swift, Kotlin or Java source as a starting point or as a refe
 | Background Recorder | [GitHub](https://github.com/despia-legacy/despia-extension-recorder) |
 | Live Activities | [GitHub](https://github.com/despia-legacy/despia-extension-live-activities) |
 | Home Widgets | [GitHub](https://github.com/despia-legacy/despia-extension-home-widgets) |
+| Meta Ads (source preview) | [GitHub](https://github.com/despia-legacy/meta-ads) |
+| TikTok Ads (source preview) | [GitHub](https://github.com/despia-legacy/tiktok-ads) |
+| Google Ads (source preview) | [GitHub](https://github.com/despia-legacy/google-ads) |
+| Calendar (source preview) | [GitHub](https://github.com/despia-legacy/calendar) |
+| Alarms (source preview) | [GitHub](https://github.com/despia-legacy/alarms) |
+| App Lock (source preview) | [GitHub](https://github.com/despia-legacy/app-lock) |
 
 ## Workflow
 
