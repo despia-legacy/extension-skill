@@ -1,5 +1,5 @@
 Despia V3 Extension Source-Available Commercial License
-Version 1.0, effective 21 November 2026
+Version 1.1, effective 21 November 2026
 
 Copyright (c) 2026 Despia LLC-FZ. All rights reserved.
 
@@ -14,13 +14,16 @@ Contact: hey@despia.com
 This license covers the Despia-authored extension source code, examples and
 associated documentation in this repository (the Software). The source is
 available for inspection and understanding. Anyone with lawful access may read
-and review it. This is a proprietary, source-available license. It is not an
-open-source license.
+and review it. Anyone with lawful access may download or make a local copy
+solely to read, inspect and understand the Software. This inspection permission
+does not allow modification, building, execution, deployment or redistribution.
+This is a proprietary, source-available license. It is not an open-source license.
 
 2. Licensed application
 
-To copy, modify, build, execute or deploy the Software, you must hold a valid
-Despia commercial license for the particular application and operating system
+Except for local inspection copies permitted by section 1, to copy, modify,
+build, execute or deploy the Software, you must hold a valid Despia commercial
+license for the particular application and operating system
 where it is used, and maintain a valid Despia project for that application.
 The standard commercial license price is USD 249 per application per operating
 system. iOS and Android require separate licenses. A license for one application
