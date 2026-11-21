@@ -1,8 +1,8 @@
 # Meta Ads extension, prepared V3 reference
 
-Publication and runtime hold: these source previews require the app changes, backend purpose/ATT settings where used, and an approved extension build path. Do not promise that a regular generation installs them. Read references/troubleshooting.md first.
+Publication and runtime hold: these source previews require the app changes, automatic ATT backend/editor rollout where used, and an approved extension build path. Do not promise that a regular generation installs them. Read references/troubleshooting.md first.
 
-Source repository: [Meta Ads](https://github.com/despia-legacy/meta-ads). This repository is private; access is required to read or copy its files.
+Source repository: [Meta Ads](https://github.com/despia-legacy/meta-ads).
 
 A native advertiser SDK extension using Meta Facebook Core SDK 19.0.1 on iOS and Android, independently of AppsFlyer. It sends app activation, custom or standard events and purchases through the SDK. It does not display Audience Network ads.
 

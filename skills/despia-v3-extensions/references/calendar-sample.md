@@ -2,7 +2,7 @@
 
 Publication and runtime hold: these source previews require the app changes and an approved extension build path. Do not promise that a regular generation installs them. Read references/troubleshooting.md first.
 
-Source repository: [Calendar](https://github.com/despia-legacy/calendar). This repository is private; access is required to read or copy its files.
+Source repository: [Calendar](https://github.com/despia-legacy/calendar).
 
 A Despia V3 extension over iOS EventKit and the Android Calendar Provider. Shared routes cover event and calendar reads, writes, recurrence, alarms, permission state and native editor presentation. Named platform routes expose iOS Reminders and Android provider tables when there is no shared operation.
 

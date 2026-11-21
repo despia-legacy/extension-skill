@@ -1,8 +1,8 @@
 # TikTok Ads extension, prepared V3 reference
 
-Publication and runtime hold: these source previews require the app changes, backend purpose/ATT settings where used, and an approved extension build path. Do not promise that a regular generation installs them. Read references/troubleshooting.md first.
+Publication and runtime hold: these source previews require the app changes, automatic ATT backend/editor rollout where used, and an approved extension build path. Do not promise that a regular generation installs them. Read references/troubleshooting.md first.
 
-Source repository: [TikTok Ads](https://github.com/despia-legacy/tiktok-ads). This repository is private; access is required to read or copy its files.
+Source repository: [TikTok Ads](https://github.com/despia-legacy/tiktok-ads).
 
 A native advertiser SDK extension using TikTok App Events SDK 1.7.2 on iOS and 1.7.1 on Android, independently of AppsFlyer. It sends custom and standard events and purchases through the SDK. It does not display Pangle ads.
 
