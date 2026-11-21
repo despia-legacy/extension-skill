@@ -9,6 +9,10 @@ For the Despia V3 runtime only, and experimental. You write native files, descri
 
 Before promising an installed feature or a successful regeneration, read `references/troubleshooting.md`. Hosting extension files and completing a regular Despia build do not enable the extension runtime. Confirm an approved extension build for the app; if availability is unknown, prepare the code and report the deployment requirement without claiming it works.
 
+The web bridge is framework independent. React, Vue, Svelte, Next.js, TanStack and HTML5 apps use the same JavaScript calls. Lovable, Base44, Replit and other builders need custom JavaScript access and correct static-file hosting. Claude Code, Codex, Cursor or another editor can edit the repository. Do not claim every builder has been tested or that a browser preview runs native code.
+
+Despia's extension samples are source available under a commercial license. Using or modifying them requires a valid Despia commercial license for the particular app and operating system, plus a valid project for that app. Standard price: USD 249 per application per operating system. Preserve each sample's LICENSE and third-party notices. The skill instructions keep their own repository license; do not describe the sample code as open source.
+
 ## Workflow
 
 1. Confirm the app is on Despia V3 and the capability is not already a Despia feature. Read `references/limits.md` and tell the user the platform limits that apply.
