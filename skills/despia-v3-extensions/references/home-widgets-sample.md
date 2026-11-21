@@ -1,6 +1,8 @@
 # Home Widgets extension
 
-Source: https://setup.despia.com/experiments/samples/home-widgets
+Documentation: https://setup.despia.com/experiments/samples/home-widgets
+
+Source: [Home Widgets repository](https://github.com/despia-legacy/despia-extension-home-widgets) (private access required). Read its [LICENSE](https://github.com/despia-legacy/despia-extension-home-widgets/blob/main/LICENSE) before using or modifying the extension.
 
 This extension puts data from your web app into native home-screen widgets. It includes a stat card and a list with buttons and checkboxes. The page sets and reads the widget data, reloads the extension's widgets, lists installed widgets and reads queued taps.
 
@@ -8,7 +10,7 @@ It is for the Despia V3 runtime. You own and maintain the copied native code. Fi
 
 ## Install
 
-1. Copy the files from the linked extension repository into `public/despia/widgets/` in your web app, keeping their `ios/` and `android/` paths. The [extension repository](https://github.com/despia-legacy/despia-extension-home-widgets) carries the same template.
+1. Copy the files from the linked extension repository into `public/despia/widgets/` in your web app, keeping their `ios/` and `android/` paths.
 2. Add `"widgets"` to the `extensions` array in `public/despia/extensions.json`, keeping your app identity and any other extension names.
 3. For iOS, register the App Group `group.<your bundle id>.nx.widgets` and enable it on both the app and the widget extension App IDs. The widget extension bundle ID is `<your bundle id>.NXWidgets`. Regenerate both provisioning profiles.
 4. Send the extension for approval and rebuild your native app. Changing the native files needs a new approval and build.

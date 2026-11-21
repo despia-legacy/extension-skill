@@ -1,5 +1,5 @@
 Despia V3 Extension Source-Available Commercial License
-Version 1.1, effective 21 November 2026
+Version 1.2, effective 21 November 2026
 
 Copyright (c) 2026 Despia LLC-FZ. All rights reserved.
 
@@ -38,6 +38,10 @@ and distribute and operate that application for its end users. You may host the
 extension source files on the application's website as required by the Despia
 extension build process. Such hosting does not grant visitors a license to use
 those files in another application.
+
+You may keep private GitHub forks or other private version-control copies of
+the Software, customize it, and use it as a reference to develop new
+functionality for that licensed application, subject to section 2.
 
 Your employees and contractors may work with the Software on your behalf for
 the licensed application under these same conditions. You are responsible for

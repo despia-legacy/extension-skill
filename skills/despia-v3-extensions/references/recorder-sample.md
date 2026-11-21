@@ -1,12 +1,14 @@
 # Background Recorder extension notes
 
-Source: https://setup.despia.com/experiments/samples/recorder . The files are in examples/recorder/ (copy each to public/despia/recorder/<path>, except extensions.json which goes in public/despia/, and recorder.policy.json which is sent to Despia with the approval request and is not served).
+Documentation: https://setup.despia.com/experiments/samples/recorder . The files are in examples/recorder/ (copy each to public/despia/recorder/<path>, except extensions.json which goes in public/despia/, and recorder.policy.json which is sent to Despia with the approval request and is not served).
+
+Source: [Background Recorder repository](https://github.com/despia-legacy/despia-extension-recorder) (private access required). Read its [LICENSE](https://github.com/despia-legacy/despia-extension-recorder/blob/main/LICENSE) before using or modifying the extension.
 
 This extension records audio from the microphone, keeps recording when the app goes to the background, and uploads the file to your server when recording stops. It shows its state in a Lock Screen widget on iOS, and in a foreground service notification and a home screen widget on Android.
 
 The page only ever sees a recording id and its state. The audio never crosses the bridge.
 
-**Experimental. V3 only.** This is a template, not a Despia feature. It is never migrated to V4. You own and maintain this code once it is in your app. Despia does not support customised code. Read [V3 Extensions](/experiments/v3-extensions) first.
+**Experimental. V3 only.** You own and maintain this ready-made extension once it is in your app. First-party V4 support comes through the new package registry. Despia does not support customised code. Read [V3 Extensions](/experiments/v3-extensions) first.
 
 ## Build prerequisite
 
