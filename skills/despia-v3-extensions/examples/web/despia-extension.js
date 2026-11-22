@@ -13,7 +13,7 @@ export async function callExtension(command) {
     const envelope = responses[watchKey];
     if (envelope === undefined) throw new Error('No native reply within 30 seconds');
     if (!envelope.ok) {
-      const error = new Error('Native extension request failed');
+      const error = new Error('Extension request failed');
       error.response = envelope;
       throw error;
     }
