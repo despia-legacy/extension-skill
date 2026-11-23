@@ -1,15 +1,46 @@
 ---
 name: despia-v3-extensions
-description: Write a Despia V3 Extension, native Swift (iOS) and Kotlin or Java (Android) code that a Despia V3 web-view app calls with extension://name/route. Use when the user wants custom native code, a native target (widget, notification extension, share extension) or a native module in a Despia V3 app, or mentions V3 Extensions, extensions.json, an extension manifest.json, or the extension:// scheme. Despia V3 only.
+description: Create, adapt or debug experimental Despia V3 native extensions, including extensions.json, per-folder manifest.json, extension:// routes, Swift handlers, Android Java or Kotlin modules, widgets and pinned native dependencies. Use for extension build failures, missing SDK answers, permissions, App Groups and background work in a Despia V3 web-view app. V3 only.
 ---
 
 # Despia V3 Extensions
 
-For the Despia V3 runtime only, and experimental. You write native files, describe them in a JSON manifest, and serve them from the web app. The native build process verifies the files and compiles them into a new app build. The page then calls `extension://name/route?<params>`. All facts are in `references/`; read the file for the step you are on. Never invent manifest fields, types, hooks or error codes. If a fact is not in the references, say so and point to https://setup.despia.com/experiments/v3-extensions .
+An extension is native source compiled into a Despia V3 app, with a manifest-defined web API. Hosting source supplies build inputs. It does not install native code in a running app. This system is experimental; do not turn a local proof or a proposed runtime change into a release claim.
 
-Before promising an installed feature or a successful regeneration, read `references/troubleshooting.md`. Extension files must be compiled into a rebuilt native app. Uploading files does not change an installed binary. Automatic discovery of hosted `/despia/extensions.json` during a normal rebuild is under review and is not yet confirmed in deployed builds. Check the actual build inputs and installed artifact before claiming inclusion.
+## Start with the right contract
 
-The web bridge is framework independent. React, Vue, Svelte, Next.js, TanStack and HTML5 apps use the same JavaScript calls. Lovable, Base44, Replit and other builders need custom JavaScript access and correct static-file hosting. Claude Code, Codex, Cursor or another editor can edit the repository. Calls run inside the installed Despia V3 app. Browser previews do not provide extension features.
+1. Confirm Despia V3, the target platforms and the actual native build/runtime version. Read `references/build-and-release.md` before promising inclusion or regeneration. Automatic discovery of hosted `/despia/extensions.json` during normal rebuilds is under review and is not confirmed deployed. Do not invent a per-app enablement switch, enrollment field or manual source-review prerequisite.
+2. Describe the native capability, target OS versions, web inputs and outputs, backend wire format if any, and what must survive page reload, backgrounding or process death. Read `references/limits.md`. If a system prompt or long operation is involved, design a prompt acknowledgement plus state/event routes rather than keeping a bridge call open indefinitely.
+3. Read `references/manifest.md` before writing JSON. The current index requires `app` identity and 1 to 8 extension folder names. A folder's `manifest.json` has `version`, not `id` or `manifest_version`. Optional-identity and other held rollout changes are not the current contract.
+4. Read `references/routes-and-answers.md` before writing web code. Use the published npm SDK directly. Watch the exact declared output variable, serialize calls sharing it, and check both no-answer timeout and native `ok`. Do not invent SDK methods, callback-value fallback or event subscription APIs.
+
+## Implement and verify
+
+| Work | Read first | Result to produce |
+| --- | --- | --- |
+| Layout, typed parameters, paths, targets and dependency pins | `references/manifest.md` | A declared source tree and valid manifest for the actual runtime |
+| Swift, lifecycle and background callbacks | `references/ios.md` | A handler using the public native context and declared hooks |
+| Java or Kotlin, services, workers and activity permissions | `references/android.md` | A handler and modules compatible with the host toolchain |
+| Missing replies, build or signing failures | `references/troubleshooting.md` | The failing stage and a focused reproduction, without guessing |
+| Build inclusion and release evidence | `references/build-and-release.md` | Exact source, selected build, installed artifact and behavioral scope |
+
+Native handlers answer each admitted active call once. A route timeout does not undo native work. After asynchronous waits, check call activity before starting work for that call. Preserve host delegate ownership and keep files and long-lived state native. Never invent context methods, lifecycle hooks, manifest fields or build-service routes.
+
+Declare complete pinned dependency graphs, not just a package URL or Maven coordinate. Follow the existing Swift package, CocoaPods and custom Android module examples in `references/manifest.md`. Verify real vendor SDK signatures against the selected version; mocks and standalone type checks do not prove integration into the host app.
+
+For web code, install `despia-native`, import `despia` from it and call `await despia(command, ['declaredOutputVariable'])` from a browser event or client lifecycle hook. The SDK import is SSR-safe; native calls require the installed app. Native errors resolve as envelopes, not rejected promises. Do not replace the SDK with a local command wrapper in the recommended recipe.
+
+## Adapt a ready-made extension
+
+| Extension | Reference | Source |
+| --- | --- | --- |
+| Background Recorder | `references/recorder-sample.md`, bundled `examples/recorder/` | https://github.com/despia-legacy/recorder |
+| Live Activities | `references/live-activities-sample.md` | https://github.com/despia-legacy/live-activities |
+| Home Widgets | `references/home-widgets-sample.md` | https://github.com/despia-legacy/home-widgets |
+
+Read the extension's actual routes, platform requirements and recorded test scope before adapting it. Keep stable identifiers and existing extension names when changing the index. Recorder's own raw audio PUT uploader is separate from a general file-picker or multipart background-upload capability. Do not promise an untested combination, indefinite background execution or recovery after every kind of termination.
+
+## Ownership and licensing
 
 Despia's ready-made extensions have public source repositories. The code uses the Despia V3 Extension Source-Available Commercial License. It is proprietary and source available. Anyone with lawful access may read the source, make copies or create GitHub forks under that license. [Public GitHub forks remain public](https://docs.github.com/en/pull-requests/reference/forks). You can keep clones in private workspaces or private version-control repositories, customize the templates and use them as a reference for native capabilities in your Despia V3 app.
 
@@ -19,29 +50,12 @@ Before production deployment or commercial use, require a valid Despia commercia
 
 Preserve each extension's LICENSE, copyright and third-party notices. Standalone redistribution is restricted except for GitHub forks expressly permitted by the license. Earlier grants and third-party rights remain intact. The skill instructions keep their own repository license. Do not describe the extension code as open source.
 
-Use the ready-made Swift, Kotlin or Java source as a starting point or as a reference for new native capabilities. Keep the implementation within the supported extension contract and the platform APIs, signing, entitlements and store policies it needs. Declare new files, routes and dependencies, then verify the source/build inputs and create a new native build.
+## Delivery boundaries
 
-| Extension | Source |
-| --- | --- |
-| Background Recorder | [GitHub](https://github.com/despia-legacy/recorder) |
-| Live Activities | [GitHub](https://github.com/despia-legacy/live-activities) |
-| Home Widgets | [GitHub](https://github.com/despia-legacy/home-widgets) |
+- Preserve build-owned app identity, signing, host permissions and entitlements. A manifest declaration is neither runtime user consent nor an Apple capability grant. Use the currently supported configuration path, not a field from a held proposal.
+- Files must stay inside the extension tree and be declared. Custom Android modules cover their approved directory trees recursively. Apply the exact path rules in `references/manifest.md`; do not copy editor caches, secrets or arbitrary hidden files.
+- Keep credentials, private URLs and user content out of examples and diagnostic logs. Use sanitized error codes and source/build identifiers when reporting failures.
+- Report what ran, on which source/artifact and with what limits. A default build, simulated handler, sample test or successful signing step does not prove a selected feature is ready for production.
+- V3 extensions do not establish V4 support. First-party V4 support comes through the new package registry.
 
-## Workflow
-
-1. Confirm the app is on Despia V3 and the capability is not already a Despia feature. Read `references/limits.md` and tell the user the platform limits that apply.
-2. Lay out `public/despia/extensions.json` and `public/despia/<name>/manifest.json` with `ios/` and `android/` beside it (`references/manifest.md`). The folder name is the extension id and matches `[a-z][a-z0-9]{1,23}`.
-3. Declare each route, its typed parameters (`string`, `int`, `bool`, `enum`, `https_url`), its `output` variable and callback, and any events (`references/manifest.md`, `references/routes-and-answers.md`).
-4. Write the iOS handler (`references/ios.md`) and the Android handler (`references/android.md`). Answer every call once, with data or an error code and message.
-5. Declare native work as typed or custom (`references/manifest.md`). For CocoaPods, declare `ios.pods`, `ios.podfile_lock` and the measured `ios.pod_trees` closure (`references/manifest.md`). To use another library, name a Swift package (GitHub URL, full commit revision, products) under `ios.packages` with `ios.package_resolved` naming the complete pinned graph, or a Maven library with `implementation` in a custom Android module's `build.gradle`; build verification must cover the dependency closure; a root URL or coordinate alone is not enough (`references/manifest.md`, "Adding a Swift package or a Maven library").
-6. Use the published Despia JS SDK for every web command (`references/routes-and-answers.md`). Install with `npm install despia-native`, then import `despia` from `despia-native`. Call the published `despia(command, [outputVariable])` function, watch the exact manifest output variable and await calls sharing it sequentially. Use one watched value per call, check timeout and native `ok`, and keep calls in browser lifecycle hooks or click handlers. Event callback registration uses declared browser globals with cleanup, not proxy assignment.
-7. Choose a ready-made extension when it fits: Background Recorder (`examples/recorder/`, `references/recorder-sample.md`), Live Activities (`references/live-activities-sample.md`) or Home Widgets (`references/home-widgets-sample.md`). Read its API and platform limits before copying it.
-8. Explain the build flow: host `/despia/extensions.json` and each extension folder, verify the signed source/dependency inputs, and rebuild the native app. Uploading files does not alter an installed binary. Do not invent a per-app enrollment field, enablement switch or human code-review prerequisite. Automatic discovery remains under review until the app changes are deployed. The user owns and maintains the native code; Despia does not support customised code.
-
-## Rules
-
-- Never set what the build owns (bundle id, versions, signing, URL types, App Transport Security, purpose strings and permissions set in Despia, push and associated-domain entitlements). See `references/manifest.md`.
-- Every file must be covered by its `manifest.json`. Custom Android module directories cover their approved trees recursively. Hidden files are refused. Keep large data native and pass identifiers through the bridge.
-- Do not claim V4 support. First-party V4 support comes through the new package registry.
-
-Docs: https://setup.despia.com/experiments/v3-extensions, https://setup.despia.com/experiments/samples/recorder, https://setup.despia.com/experiments/samples/live-activities and https://setup.despia.com/experiments/samples/home-widgets
+Public guide: https://setup.despia.com/experiments/v3-extensions . Troubleshooting: https://setup.despia.com/experiments/extension-troubleshooting .
