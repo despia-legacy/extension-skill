@@ -218,3 +218,16 @@ Files are accepted by type: source and text formats, assets and binaries. Every 
 You cannot set these. The build sets them for you: bundle id and package name, versions, team and signing, URL types, App Transport Security, purpose strings and permissions your app already sets in Despia (declare them under `requires`), and push and associated-domain entitlements. App Groups are logical names. A group named `nativeext` becomes `group.<bundle id>.nx.nativeext`.
 
 Build errors in your files are reported by their served path, `<extension>/<ios|android>/<your path>:<line>:<column>`, for example `recorder/ios/app/RecorderExtension.swift:42:17`. Secrets, tokens and build machine paths are redacted.
+
+## Set up iOS App Groups
+
+Use an App Group when your iOS app and an embedded target, such as a widget, need to read and write the same data.
+
+1. Put the same logical group name in `com.apple.security.application-groups` under `ios.app.entitlements` and under `entitlements` on each participating target in `ios.targets`. Keep the short name, such as `widgets`, in the manifest.
+2. In Apple Developer, register `group.<app bundle ID>.nx.<logical name>`. For Home Widgets in `com.example.myapp`, register `group.com.example.myapp.nx.widgets`.
+3. Assign the group to the main App ID and the widget extension App ID on the same team. The Home Widgets target is `NXWidgets`, so its generated bundle ID is `com.example.myapp.NXWidgets`. Register that separate App ID before assigning the group. Keep these existing target IDs when configuring the current V3 runtime.
+4. Regenerate the provisioning profiles for the app and the widget target. Use those profiles for the next native build, then check that both processes can access the shared data on a device.
+
+The manifest requests the entitlement. Apple provisioning grants it. `NX-S010` means the build needs a profile for the reported bundle ID. For `NX-S011` on `com.apple.security.application-groups`, check that the reported bundle's profile grants the exact group ID.
+
+See [Set up iOS App Groups](https://setup.despia.com/experiments/v3-extensions#set-up-ios-app-groups) for the public guide. These instructions apply to targets declared in the V3 manifest; built-in Home Widgets and Share Extension have their own setup.
