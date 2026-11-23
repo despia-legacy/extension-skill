@@ -24,13 +24,13 @@ Use V3 Extensions when you need a native capability that Despia does not offer a
 ## How it works
 
 - **The manifest declares the extension.**
-    Each extension has a `manifest.json`. It declares the extension id, its routes, the typed parameters of each route, the answer variable and callback of each route, its events, and the native files for each platform.
+    Each extension has a `manifest.json`. Its folder supplies the extension id. The manifest declares its routes, the typed parameters of each route, the answer variable and callback of each route, its events, and the native files for each platform.
 - **Despia builds it into your app.**
     Your files are served from your app's own HTTPS origin. The extension build process fetches and verifies the index, source files and pinned dependencies, then compiles them into a new native build. Signed inputs bind the build to your app. Changed source needs fresh build verification and a native rebuild; it cannot be applied over-the-air.
 - **Your web app calls a route.**
     The page sends `extension://<id>/<route>?<params>`. The runtime first checks the call: the extension and route exist, only declared parameters are present, and each value has the declared type. Only then does it call your native handler.
 - **The answer comes back once.**
-    Every call answers exactly once, in the page that made it. The runtime sets the route's answer variable on `window` and then calls the route's callback with it.
+    Every admitted call gets one terminal answer in its calling document while that document remains eligible to receive it. Missing runtimes and rejected callers do not provide that guarantee. The runtime sets the route's answer variable on `window` and then calls the route's callback with it.
 
 ## Source and build verification
 
@@ -131,6 +131,24 @@ An `int` may declare `min` and `max` anywhere in the range -(2^53-1) to 2^53-1 (
 
 Keep large data on the native side and pass identifiers through the bridge. A call URL is at most 8192 characters, and each extension accepts up to 20 calls per second.
 
+## Validate the contract before native work
+
+JSON parsing is only the first check. Use the runtime's manifest validator, then the selected native build. Do not add fields just because they sound useful.
+
+| Item | Current contract |
+| --- | --- |
+| Index | Only `app` and `extensions`; 1 to 8 distinct extension folder names |
+| Folder manifest | `version`; the folder supplies `id`, so an explicit `id` is rejected |
+| Route names | Lowercase letter followed by lowercase letters, digits or `_`, up to 32 characters |
+| Parameters | Only declared names and type-specific fields; `callback` is reserved for the bridge |
+| Outputs | Valid JavaScript names; a route's output variable and callback must differ |
+| Timeout | `timeout_ms` on the route, default 20000, range 1000 to 25000 milliseconds |
+| Paths | Relative to the extension folder, in the platform tree, no traversal or symlinks |
+
+Declare a string for encoded JSON only when the handler actually parses and validates that JSON. The bridge does not infer object types, file references or new routes from JavaScript. `https_url` host approval is a destination constraint, not authentication or a guarantee that a later redirect is safe. Recheck stored destinations before delayed network work.
+
+Source paths and custom directory coverage must agree with the fetched tree. Names and case matter. Do not put credentials, build policy, signing material, package caches or editor directories in the hosted source tree. The only supported hidden resource member is `.xccurrentversion` directly inside a non-hidden `.xcdatamodeld` bundle; this does not allow arbitrary dotfiles.
+
 ## Declaring native work
 
 Both ways are declared in an extension's `manifest.json`.
@@ -209,15 +227,15 @@ Both ways may also declare:
 
 - **Android `min_sdk`** (21 to 36, typed modules). The module builds at that level. On a device below it, the extension is never created and every route answers `platform_limit`.
 - **Android `meta_data`.** Application `<meta-data>` entries, each a `name` and exactly one of `value` or `resource`. A name the app already declares, or another extension declares, is refused. Keep account values in your config, not in a public repository.
-- **iOS `packages[].weak: true`.** Every product of that package is linked as optional, so an app whose deployment target is below the package's minimum still launches. Guard its use with `#available`.
+- **iOS `packages[].weak: true`.** Products are weak-linked. This is not a general bypass for a package's compiler or deployment requirements. Check the real package graph and guard supported runtime use with `#available`.
 
-Files are accepted by type: source and text formats, assets and binaries. Every file must be covered by its `manifest.json`, and an unreferenced file is refused. A custom Android module `dir` covers its declared directory tree recursively. Hidden files (names that start with a dot) are always refused. Binaries must be declared and covered by the verified build inputs.
+Files are accepted by type: source and text formats, assets and binaries. Every file must be covered by its `manifest.json`, and an unreferenced file is refused. A custom Android module `dir` covers its declared directory tree recursively. Hidden files are refused except for the specific `.xcdatamodeld/.xccurrentversion` resource member described above. Binaries must be declared and covered by the verified build inputs.
 
 ## What the build owns
 
 You cannot set these. The build sets them for you: bundle id and package name, versions, team and signing, URL types, App Transport Security, purpose strings and permissions your app already sets in Despia (declare them under `requires`), and push and associated-domain entitlements. App Groups are logical names. A group named `nativeext` becomes `group.<bundle id>.nx.nativeext`.
 
-Build errors in your files are reported by their served path, `<extension>/<ios|android>/<your path>:<line>:<column>`, for example `recorder/ios/app/RecorderExtension.swift:42:17`. Secrets, tokens and build machine paths are redacted.
+Build errors in your files are reported by their served path, `<extension>/<ios|android>/<your path>:<line>:<column>`, for example `recorder/ios/app/RecorderExtension.swift:42:17`. Build diagnostics have redaction handling. Do not assume every native or WebView runtime log is redacted, and do not log raw commands, credentials or authenticated URLs.
 
 ## Set up iOS App Groups
 

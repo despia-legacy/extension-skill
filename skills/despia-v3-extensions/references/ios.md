@@ -55,3 +55,13 @@ Each hook is called only when its name is listed in `ios.app.lifecycle`. The run
 | `terminate`              | `willTerminate()`                                                             |
 
 `handleBackgroundURLSession(name:completion:)` receives events for a session declared in `background_url_sessions`. Set a background task's expiration handler with `context.onExpiration(of:_:)`, never `task.expirationHandler`.
+
+## Host and platform integration
+
+Keep the host's system delegates and WebView ownership intact. Declare the lifecycle hooks you need and implement their exact protocol signatures. Do not replace the app delegate, notification center delegate or root view controller to reach an API the extension context does not expose.
+
+Keep long-lived work and its state independent of a loaded page. `didLaunch` can run without a WebView, so do not wait for JavaScript to initialize recovery. For a declared background URLSession, persist task-to-operation identity and finish the host-supplied completion only after that session's events have drained. Merely declaring a session does not convert an ephemeral upload into a background transfer.
+
+Use the host's real Swift language mode and the pinned SDK's actual signatures. Declarations, OS availability checks, user permission and provisioning are separate. App Groups need the actual app/target identifiers and profiles in `manifest.md`. Store policy and managed capability approval still apply even when compilation succeeds.
+
+Do not put private inputs or full authenticated URLs in `log(_:)`. Before shipping, exercise the specific permission denial, interruption, page reload and process recovery behavior your API promises; a standalone Swift type check is narrower evidence.

@@ -25,6 +25,14 @@ Before you build, change these values to your own:
 
 The build policy is part of the trusted build inputs and is not served from your site. Signed-source checks verify the exact files and dependency graph; artifact checks verify the build before signing. You own the behavior and maintenance of your native code.
 
+## Recording and upload boundaries
+
+Recorder contains its own audio-file uploader. It sends raw `PUT` requests with `Content-Type: audio/mp4` and `X-Recording-Id`; it does not send multipart form data or arbitrary JSON metadata. Your endpoint must implement that contract. An `uploading` state is not server-confirmed completion.
+
+On iOS the uploader uses an in-process ephemeral URLSession and opportunistic background processing. It is not a background URLSession daemon transfer. On Android it uses a regular WorkManager worker. An interrupted attempt can restart from byte zero; scheduling does not guarantee immediate or indefinite execution. Start recording in the foreground after microphone consent, then recover through the native status state rather than relying on a page event.
+
+A general file-picker or multipart background-upload extension is a separate capability. Recorder's documented tests do not prove that separate capability or a combined Recorder-to-uploader workflow. Verify the actual pairing, backend protocol and termination/recovery cases before promising them.
+
 ## Permissions and capabilities
 
 The manifest declares everything the recorder needs. The build adds them to your app.
