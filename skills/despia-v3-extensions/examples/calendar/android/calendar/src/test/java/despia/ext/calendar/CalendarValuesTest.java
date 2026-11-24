@@ -52,4 +52,22 @@ public class CalendarValuesTest {
         assertArrayEquals(new long[]{7L, 1767175200000L}, CalendarExtension.futureFrom(series, null));
         assertFalse(CalendarExtension.detached(new JSONObject("{\"_id\":8,\"original_id\":\"\"}")));
     }
+
+    @Test public void futureSpanFromEditedOccurrenceStartsFromItsOwnValues() throws Exception {
+        // Saving "future" from an occurrence moved from 09:00Z to 10:00Z: the new series starts at 10:00Z with that
+        // occurrence's length and fields (EventKit futureEvents keeps the edited values), the caller's changes on top.
+        JSONObject moved = new JSONObject("{\"_id\":42,\"original_id\":\"7\",\"originalInstanceTime\":1767430800000,\"dtstart\":1767434400000,\"dtend\":1767438000000,\"duration\":null,\"title\":\"Moved\",\"description\":null,\"eventLocation\":\"Room 2\",\"eventTimezone\":\"UTC\",\"allDay\":0}");
+        JSONObject next = CalendarExtension.futureValues(new JSONObject("{\"id\":\"7\",\"title\":\"Split\"}"), moved, 1767430800000L);
+        assertEquals(1767434400000L, next.getLong("start_ms"));
+        assertEquals(1767438000000L, next.getLong("end_ms"));
+        assertEquals("Split", next.getString("title"));
+        assertEquals("Room 2", next.getString("location"));
+        assertFalse(next.has("notes"));
+        // An occurrence still inside its series starts the new series at its slot with the series length.
+        JSONObject series = new JSONObject("{\"_id\":7,\"original_id\":null,\"dtstart\":1767258000000,\"dtend\":null,\"duration\":\"P3600S\",\"title\":\"Series\",\"description\":null,\"eventLocation\":null,\"eventTimezone\":\"UTC\",\"allDay\":0}");
+        JSONObject inSeries = CalendarExtension.futureValues(new JSONObject("{}"), series, 1767430800000L);
+        assertEquals(1767430800000L, inSeries.getLong("start_ms"));
+        assertEquals(1767434400000L, inSeries.getLong("end_ms"));
+        assertEquals("Series", inSeries.getString("title"));
+    }
 }
