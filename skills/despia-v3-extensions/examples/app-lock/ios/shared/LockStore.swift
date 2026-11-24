@@ -64,8 +64,11 @@ final class LockStore {
     let directory: URL
     private let document: URL
     init() throws {
-        guard let names = Bundle.main.object(forInfoDictionaryKey: "DESPIA_NX_APP_GROUPS") as? [String: String],
-              let name = names["applock"],
+        // The build publishes the logical App Group names as DESPIA_NX_APP_GROUPS in every bundle of the extension,
+        // and as the legacy NXAppGroups key when the bundle does not declare that key itself.
+        let names = (Bundle.main.object(forInfoDictionaryKey: "DESPIA_NX_APP_GROUPS") as? [String: String])
+            ?? (Bundle.main.object(forInfoDictionaryKey: "NXAppGroups") as? [String: String])
+        guard let name = names?["applock"],
               let directory = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: name) else {
             throw LockFailure.unavailable("The applock App Group is not provisioned")
         }

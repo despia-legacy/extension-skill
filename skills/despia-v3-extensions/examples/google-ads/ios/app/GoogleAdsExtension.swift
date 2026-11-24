@@ -13,7 +13,7 @@ final class GoogleAdsExtension: NativeExtension {
     func handle(_ call: NativeExtCall) async -> NativeExtResult {
         do {
             if call.route == "status" {
-                return .ok(["configured": configured, "enabled": enabled, "sdk": "10.29.0"])
+                return .ok(["configured": configured, "enabled": enabled, "sdk": "13.2.0"])
             }
             if call.route == "configure" {
                 if configured { return .ok(["configured": true, "enabled": enabled]) }
@@ -122,7 +122,7 @@ enum GoogleAdsConfiguration {
         return true
     }
     static func isValidAppID(_ appID: String) -> Bool {
-        // FirebaseCore10.29 validates this before configuring, using an Objective-C exception on failure.
+        // FirebaseCore validates this before configuring, using an Objective-C exception on failure.
         let scanner = Scanner(string: appID)
         scanner.charactersToBeSkipped = nil
         guard let version = scanner.scanCharacters(from: .decimalDigits), scanner.scanString(":") != nil else { return false }

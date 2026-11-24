@@ -108,11 +108,11 @@ final class CalendarExtension: NSObject, NativeExtension, @MainActor EKEventEdit
             case "event_get": return .ok(event(try findEvent(p["id"])))
             case "event_save":
                 let data = try CalendarValues.object(p["data"])
-                let item = try makeEvent(data)
+                let item = try makeEvent(data, occurrence: p["occurrence_ms"])
                 try store.save(item, span: p["span"] as? String == "future" ? .futureEvents : .thisEvent, commit: true)
                 return .ok(["id": item.eventIdentifier ?? "", "saved": true])
             case "event_delete":
-                let item = try findEvent(p["id"])
+                let item = try findEvent(p["id"], occurrence: p["occurrence_ms"])
                 try store.remove(item, span: p["span"] as? String == "future" ? .futureEvents : .thisEvent, commit: true)
                 return .ok(["deleted": true])
             default: return .error(code: "not_registered", message: call.route)
@@ -134,9 +134,15 @@ final class CalendarExtension: NSObject, NativeExtension, @MainActor EKEventEdit
     private func permissions() -> [String: Any] { ["events": permission(.event), "reminders": permission(.reminder), "pending": requesting] }
     private func requireRead() throws { guard permission(.event) == "full" else { throw CalendarFailure.permission } }
     private func requireWrite() throws { guard ["full", "write_only"].contains(permission(.event)) else { throw CalendarFailure.permission } }
-    private func findEvent(_ raw: Any?) throws -> EKEvent {
+    /// The event, or with `occurrence` (epoch ms) that occurrence of a recurring event. Without it EventKit returns the
+    /// first occurrence, so "this" and "future" act from the series start.
+    private func findEvent(_ raw: Any?, occurrence: Any? = nil) throws -> EKEvent {
         guard let id = raw as? String, let item = store.event(withIdentifier: id) else { throw CalendarFailure.notFound }
-        return item
+        guard occurrence != nil else { return item }
+        let start = try CalendarValues.date(occurrence)
+        let matches = store.events(matching: store.predicateForEvents(withStart: start, end: start.addingTimeInterval(1), calendars: [item.calendar]))
+        guard let found = matches.first(where: { $0.eventIdentifier == id && $0.startDate == start }) else { throw CalendarFailure.notFound }
+        return found
     }
     private func calendar(_ item: EKCalendar) -> [String: Any] {
         ["id": item.calendarIdentifier, "title": item.title, "writable": item.allowsContentModifications,
@@ -162,8 +168,8 @@ final class CalendarExtension: NSObject, NativeExtension, @MainActor EKEventEdit
         }
         return out
     }
-    private func makeEvent(_ data: [String: Any]) throws -> EKEvent {
-        let item = try data["id"] == nil ? EKEvent(eventStore: store) : findEvent(data["id"])
+    private func makeEvent(_ data: [String: Any], occurrence: Any? = nil) throws -> EKEvent {
+        let item = try data["id"] == nil ? EKEvent(eventStore: store) : findEvent(data["id"], occurrence: occurrence)
         if let id = data["calendar_id"] as? String { guard let cal = store.calendar(withIdentifier: id) else { throw CalendarFailure.notFound }; item.calendar = cal }
         if item.calendar == nil { item.calendar = store.defaultCalendarForNewEvents }
         guard let cal = item.calendar, cal.allowsContentModifications else { throw CalendarFailure.invalid("Choose a writable calendar") }

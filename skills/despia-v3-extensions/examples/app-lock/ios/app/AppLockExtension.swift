@@ -1,4 +1,3 @@
-#if DESPIA_NX_ENABLED
 import Foundation
 import UIKit
 import SwiftUI
@@ -34,7 +33,8 @@ final class AppLockExtension: NativeExtension {
                             self.emit("authorization", ["status": self.authorizationStatus, "pending": false])
                         } catch {
                             self.authorizationPending = false
-                            self.emit("authorization", ["status": self.authorizationStatus, "pending": false, "error": error.localizedDescription])
+                            self.emit("authorization", ["status": self.authorizationStatus, "pending": false, "error": error.localizedDescription,
+                                                        "error_code": Self.familyControlsCode(error)])
                         }
                     }
                 }
@@ -151,6 +151,23 @@ final class AppLockExtension: NativeExtension {
             return .error(code: code, message: failure.localizedDescription)
         } catch { return .error(code: "app_lock_error", message: error.localizedDescription) }
     }
+    /// FamilyControlsError as a stable code. `unauthorized` in a signed build usually means a bundle ID lacks the
+    /// Family Controls entitlement (Distribution approval is per bundle ID: the app and its three extensions).
+    private static func familyControlsCode(_ error: Error) -> String {
+        guard let failure = error as? FamilyControlsError else { return "app_lock_error" }
+        switch failure {
+        case .restricted: return "restricted"
+        case .unavailable: return "unavailable"
+        case .invalidAccountType: return "invalid_account_type"
+        case .invalidArgument: return "invalid_argument"
+        case .authorizationConflict: return "authorization_conflict"
+        case .authorizationCanceled: return "authorization_canceled"
+        case .networkError: return "network_error"
+        case .authenticationMethodUnavailable: return "authentication_method_unavailable"
+        case .unauthorized: return "unauthorized"
+        @unknown default: return "app_lock_error"
+        }
+    }
     private var authorizationStatus: String {
         let status = AuthorizationCenter.shared.authorizationStatus
         if #available(iOS 26.4, *), status == .approvedWithDataAccess { return "approved" }
@@ -199,4 +216,3 @@ private struct SelectionView: View {
         }
     }
 }
-#endif
