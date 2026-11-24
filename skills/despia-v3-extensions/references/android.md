@@ -48,3 +48,13 @@ public final class RecorderExtension implements NativeExtension {
 - `onCreate` runs in `Application.onCreate` of the main process, before any activity or WebView. It also runs when WorkManager or a receiver starts the process. List `application_create` in `android.lifecycle`.
 
 `ExtContext` gives you `app()`, `dataDir()`, `emit(event, json)`, `log(msg)`, `resultKey(name)` and `isApprovedUrl(url, route, param)`. Use `isApprovedUrl` to check a stored URL again before delayed work, such as a `Worker` or a service, sends anything to it.
+
+## Host and platform integration
+
+Use only the public context and declared lifecycle hooks. An application context is not an Activity and cannot silently supply a permission dialog. Declare `activity_lifecycle` when you need `onActivityEvent`, handle Activity recreation and namespace Activity Result Registry keys with `ctx.resultKey`. A permission in the compiled manifest does not grant runtime user consent.
+
+Services, receivers and workers can start a process without a page. Persist the operation state they need natively, and expose status when the page returns. Check `call.isActive()` after asynchronous waits before starting new work for a waiting call. Reply once; do not treat the SDK's missing-answer timeout as cancellation.
+
+Compile custom modules against the host's actual Gradle, Android SDK and minimum-device requirements. The current extension `min_sdk` route guard is not an app minimum-SDK upgrade. Real SDK dependencies, manifest merging, foreground-service declarations and artifact checks must pass in the selected host build.
+
+Choose scheduling for the operation rather than assuming all background work is equivalent. Recorder's regular WorkManager uploader does not establish a general user-initiated transfer service. Document retry, interruption and server idempotency; avoid private content, credentials and full authenticated URLs in logs.

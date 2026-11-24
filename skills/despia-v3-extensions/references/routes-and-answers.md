@@ -29,6 +29,27 @@ async function readRecorderStatus() {
 
 The SDK resolves native error answers as well as successes. Read the full envelope through `reply.recorderStatus`, including `ok`, `code`, `error` and `data`. Check `answer.ok`; a native failure does not reject the SDK promise. A single-variable watch resolves to `undefined` after 30 seconds if no value arrives. That timeout does not cancel native work. Inspect the returned native envelope rather than assuming every command uses the same error shape.
 
+### Query encoding and the two timeouts
+
+Encode each value, not the whole command:
+
+```javascript
+import despia from 'despia-native';
+
+async function readRecording(id) {
+  const command = 'extension://recorder/status?id=' + encodeURIComponent(id);
+  const reply = await despia(command, ['recorderStatus']);
+  const answer = reply.recorderStatus;
+  if (answer === undefined) { console.error('No native reply within 30 seconds'); return; }
+  if (!answer.ok) { console.error(answer.code, answer.error); return; }
+  return answer.data;
+}
+```
+
+For JSON-in-a-string parameters, encode `JSON.stringify(value)`. The native decoder preserves literal `+`. If you construct a query with `URLSearchParams`, replace its form-encoded `+` with `%20` before sending; `%2B` already means a literal plus. Do not append `?` when there are no parameters. Duplicate keys, malformed escapes and undeclared parameters are rejected.
+
+The native route's `timeout_ms` defaults to 20000 and accepts 1000 to 25000 milliseconds. The SDK's single-variable watch waits 30 seconds. Native `timeout` is an error envelope; a missing watched value is `undefined`. Neither timer rolls back a native operation. Long operations should acknowledge an accepted/pending state, then expose status and declared events.
+
 ### React
 
 Importing the SDK is safe during server rendering. Call it from a client event or lifecycle hook. In Next.js, put the component behind a client boundary. Keep calls sharing an output variable sequential, including calls from other components.
@@ -129,7 +150,7 @@ Every answer has the same shape:
 | `error`     | The error message on error                                        |
 | `code`      | The error code on error                                           |
 
-An error carries a code and a message, and nothing else. If the page must tell failures apart, give each one its own code.
+A native failure uses flat `code` and `error` fields in this envelope, not a nested `error.code` object. If the page must tell failures apart, give each one its own code.
 
 ### Error codes
 
@@ -150,11 +171,11 @@ In a build containing the extension runtime, an unregistered extension or route 
 
 ## Patterns the extensions use
 
-The bridge answer is a JavaScript string with typed parameters. These conventions keep that workable.
+The command is a URL string; the native answer is a structured envelope. These are implementation conventions, not extra manifest types or built-in SDK services.
 
 - **Bytes.** A parameter named `hex` (hex digits, even length) or `b64` (standard or URL-safe base64), exactly one of them, and lower-case `hex` in answers.
 - **UUIDs and lists.** UUIDs are `string` parameters in 16-bit, 32-bit or 128-bit form, and answers give lower-case 128-bit. Lists are comma-separated strings.
 - **A table in one parameter.** One `string` parameter, with entries separated by `,` and fields by `~`. The extension parses it and refuses it whole.
 - **Answers the platform needs at once.** When the platform asks for a value the page cannot give in time, the extension answers from a native value store that the page sets, and reports each write as an event.
 - **Events a page may miss.** An event sent while no page is loaded is dropped. Keep each event in a native journal with a sequence number, offer a route that reads it (`events?after=<seq>`), and keep state readable through its own route.
-- **Files.** File bytes never belong in a bridge answer. Serve the file from the extension on `127.0.0.1` with a random per-file token in the URL, and answer with that URL.
+- **Files.** File bytes never belong in a bridge answer. Return a native file identifier. If your implementation provides a local file server, confine file access and use unguessable, short-lived access tokens. The extension context does not supply a universal file-server API.

@@ -24,13 +24,13 @@ Use V3 Extensions when you need a native capability that Despia does not offer a
 ## How it works
 
 - **The manifest declares the extension.**
-    Each extension has a `manifest.json`. It declares the extension id, its routes, the typed parameters of each route, the answer variable and callback of each route, its events, and the native files for each platform.
+    Each extension has a `manifest.json`. Its folder supplies the extension id. The manifest declares its routes, the typed parameters of each route, the answer variable and callback of each route, its events, and the native files for each platform.
 - **Despia builds it into your app.**
     Your files are served from your app's own HTTPS origin. The extension build process fetches and verifies the index, source files and pinned dependencies, then compiles them into a new native build. Signed inputs bind the build to your app. Changed source needs fresh build verification and a native rebuild; it cannot be applied over-the-air.
 - **Your web app calls a route.**
     The page sends `extension://<id>/<route>?<params>`. The runtime first checks the call: the extension and route exist, only declared parameters are present, and each value has the declared type. Only then does it call your native handler.
 - **The answer comes back once.**
-    Every call answers exactly once, in the page that made it. The runtime sets the route's answer variable on `window` and then calls the route's callback with it.
+    Every admitted call gets one terminal answer in its calling document while that document remains eligible to receive it. Missing runtimes and rejected callers do not provide that guarantee. The runtime sets the route's answer variable on `window` and then calls the route's callback with it.
 
 ## Source and build verification
 
@@ -124,6 +124,24 @@ An `int` may declare `min` and `max` anywhere in the range -(2^53-1) to 2^53-1 (
 
 Keep large data on the native side and pass identifiers through the bridge. A call URL is at most 8192 characters, and each extension accepts up to 20 calls per second.
 
+## Validate the contract before native work
+
+JSON parsing is only the first check. Use the runtime's manifest validator, then the selected native build. Do not add fields just because they sound useful.
+
+| Item | Current contract |
+| --- | --- |
+| Index | Only `app` and `extensions`; 1 to 8 distinct extension folder names |
+| Folder manifest | `version`; the folder supplies `id`, so an explicit `id` is rejected |
+| Route names | Lowercase letter followed by lowercase letters, digits or `_`, up to 32 characters |
+| Parameters | Only declared names and type-specific fields; `callback` is reserved for the bridge |
+| Outputs | Valid JavaScript names; a route's output variable and callback must differ |
+| Timeout | `timeout_ms` on the route, default 20000, range 1000 to 25000 milliseconds |
+| Paths | Relative to the extension folder, in the platform tree, no traversal or symlinks |
+
+Declare a string for encoded JSON only when the handler actually parses and validates that JSON. The bridge does not infer object types, file references or new routes from JavaScript. `https_url` host approval is a destination constraint, not authentication or a guarantee that a later redirect is safe. Recheck stored destinations before delayed network work.
+
+Source paths and custom directory coverage must agree with the fetched tree. Names and case matter. Do not put credentials, build policy, signing material, package caches or editor directories in the hosted source tree. The only supported hidden resource member is `.xccurrentversion` directly inside a non-hidden `.xcdatamodeld` bundle; this does not allow arbitrary dotfiles.
+
 ## Declaring native work
 
 Both ways are declared in an extension's `manifest.json`.
@@ -202,9 +220,9 @@ Both ways may also declare:
 
 - **Android `min_sdk`** (21 to 36, typed modules). The module builds at that level. On a device below it, the extension is never created and every route answers `platform_limit`.
 - **Android `meta_data`.** Application `<meta-data>` entries, each a `name` and exactly one of `value` or `resource`. A name the app already declares, or another extension declares, is refused. Keep account values in your config, not in a public repository.
-- **iOS `packages[].weak: true`.** Every product of that package is linked as optional, so an app whose deployment target is below the package's minimum still launches. Guard its use with `#available`.
+- **iOS `packages[].weak: true`.** Products are weak-linked. This is not a general bypass for a package's compiler or deployment requirements. Check the real package graph and guard supported runtime use with `#available`.
 
-Files are accepted by type: source and text formats, assets and binaries. Every file must be covered by its `manifest.json`, and an unreferenced file is refused. A custom Android module `dir` covers its declared directory tree recursively. Hidden files (names that start with a dot) are always refused. Binaries must be declared and covered by the verified build inputs.
+Files are accepted by type: source and text formats, assets and binaries. Every file must be covered by its `manifest.json`, and an unreferenced file is refused. A custom Android module `dir` covers its declared directory tree recursively. Hidden files are refused except for the specific `.xcdatamodeld/.xccurrentversion` resource member described above. Binaries must be declared and covered by the verified build inputs.
 
 ## What the build owns
 
@@ -231,4 +249,17 @@ Nonempty purpose text from the app's build configuration wins. An absent key or 
 
 This uses the existing manifest fields and needs no new dashboard or Xano field for each Apple framework. It does not grant system authorization, enable a disabled native feature or change signing. Signed verification still binds the exact source, app identity, manifest and dependency contract; final artifact checks remain exact.
 
-Build errors in your files are reported by their served path, `<extension>/<ios|android>/<your path>:<line>:<column>`, for example `recorder/ios/app/RecorderExtension.swift:42:17`. Secrets, tokens and build machine paths are redacted.
+Build errors in your files are reported by their served path, `<extension>/<ios|android>/<your path>:<line>:<column>`, for example `recorder/ios/app/RecorderExtension.swift:42:17`. Build diagnostics have redaction handling. Do not assume every native or WebView runtime log is redacted, and do not log raw commands, credentials or authenticated URLs.
+
+## Set up iOS App Groups
+
+Use an App Group when your iOS app and an embedded target, such as a widget, need to read and write the same data.
+
+1. Put the same logical group name in `com.apple.security.application-groups` under `ios.app.entitlements` and under `entitlements` on each participating target in `ios.targets`. Keep the short name, such as `widgets`, in the manifest.
+2. In Apple Developer, register `group.<app bundle ID>.nx.<logical name>`. For Home Widgets in `com.example.myapp`, register `group.com.example.myapp.nx.widgets`.
+3. Assign the group to the main App ID and the widget extension App ID on the same team. The Home Widgets target is `NXWidgets`, so its generated bundle ID is `com.example.myapp.NXWidgets`. Register that separate App ID before assigning the group. Keep these existing target IDs when configuring the current V3 runtime.
+4. Regenerate the provisioning profiles for the app and the widget target. Use those profiles for the next native build, then check that both processes can access the shared data on a device.
+
+The manifest requests the entitlement. Apple provisioning grants it. `NX-S010` means the build needs a profile for the reported bundle ID. For `NX-S011` on `com.apple.security.application-groups`, check that the reported bundle's profile grants the exact group ID.
+
+See [Set up iOS App Groups](https://setup.despia.com/experiments/v3-extensions#set-up-ios-app-groups) for the public guide. These instructions apply to targets declared in the V3 manifest; built-in Home Widgets and Share Extension have their own setup.
