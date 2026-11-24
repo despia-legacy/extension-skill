@@ -5,19 +5,19 @@
 | Stage | What it establishes | What it does not establish |
 | --- | --- | --- |
 | Hosting | Required paths return the intended JSON, native source and resources | That a native app contains them |
-| Input verification | The selected source, identity and dependency graph match the verified build inputs | That the code compiles or behaves correctly |
+| Input verification | The selected source and dependency graph match the verified build inputs | That the code compiles or behaves correctly |
 | Native build and artifact checks | The selected extension compiles and the resulting artifact matches the checked inputs | User consent, device behavior, store approval or a successful provider operation |
 | Installed-app exercise | A particular artifact performs the exercised behavior | Untested lifecycle cases, devices, providers or combinations |
 
 Uploading or deploying web files does not update an installed native binary. Changed native files, manifests, dependencies, permissions or targets require fresh build verification and a native rebuild. Web UI changes can be hosted separately only when they remain compatible with the installed native API.
 
-Automatic discovery of hosted `/despia/extensions.json` during a normal rebuild is under review and is not confirmed deployed. Check the actual build inputs and installed artifact. Do not claim a per-app manual enrollment switch is required, or claim that source hosting alone triggers native inclusion. The source/dependency and signing checks are technical verification, not a human review of every developer-owned extension.
+Extension builds are not yet open to every app. An app that serves `/despia/extensions.json` today gets a clear build error rather than a build without its extensions. The standard build of an app with no index is unchanged. There is no per-app enrollment switch. Check the actual build inputs and installed artifact. Do not claim that source hosting alone triggers native inclusion. The source/dependency and signing checks are technical verification, not a human review of every developer-owned extension.
 
 ## Prepare the source
 
-1. Read the current runtime's index format. It requires `app` identity and 1 to 8 extension names. Copy real app identifiers from the project; do not infer or manufacture them.
+1. Write the index with the `extensions` key only: 0 to 8 unique folder names. Despia reads the app's client id, bundle id and Android package from the build, so you add none of them.
 2. Put the index at `public/despia/extensions.json` and each manifest at `public/despia/<name>/manifest.json`. Serve the native files and resources at their exact paths on the app's HTTPS origin.
-3. Check response bodies, not just HTTP status. A SPA fallback returning HTML with status 200 is not a valid JSON index or Swift file. Keep static extension paths ahead of the fallback. The fetcher uses `despia-nx-fetch/1`.
+3. Check response bodies, not just HTTP status. A SPA fallback returning HTML with status 200 is not a valid JSON index or Swift file. Keep static extension paths ahead of the fallback, and do not block the build's automated fetcher with bot protection or sign-in.
 4. Declare every required source, resource, target and pinned dependency. Keep trusted policy/signing inputs outside the public source tree. Do not place service credentials or private signing material in an extension folder.
 5. Keep the build inputs stable while verifying and building. Changing a served file without refreshing the verified snapshot is a different source input, not a harmless hosting change.
 

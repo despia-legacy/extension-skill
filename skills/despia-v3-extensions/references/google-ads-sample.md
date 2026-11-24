@@ -4,6 +4,8 @@ Source preview. Runtime changes and hosted extension support are pending deploym
 
 Source repository: [Google Ads](https://github.com/despia-legacy/google-ads).
 
+Bundled files: `examples/google-ads/`, copied from the template repository. Copy `manifest.json`, `ios/` and `android/` to `public/despia/<id>/`, and put `extensions.json` in `public/despia/` or merge its name into your own; the template ships no policy file.
+
 Send native Firebase Analytics events from a Despia V3 app for use by a linked Google Ads account. This extension is independent of AppsFlyer. It does not display ads or include AdMob. First-party V4 support comes through the new package registry.
 
 ## Install

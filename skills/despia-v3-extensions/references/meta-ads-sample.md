@@ -4,6 +4,8 @@ Publication and runtime hold: these source previews require the app changes, aut
 
 Source repository: [Meta Ads](https://github.com/despia-legacy/meta-ads).
 
+Bundled files: `examples/meta-ads/`, copied from the template repository. Copy `manifest.json`, `ios/` and `android/` to `public/despia/<id>/`, and put `extensions.json` in `public/despia/` or merge its name into your own; `meta-ads.policy.json` is build verification metadata and is not served.
+
 A native advertiser SDK extension using Meta Facebook Core SDK 19.0.1 on iOS and Android, independently of AppsFlyer. It sends app activation, custom or standard events and purchases through the SDK. It does not display Audience Network ads.
 
 For the Despia V3 runtime. First-party V4 support comes through the new package registry.
@@ -25,7 +27,7 @@ app. A browser preview alone does not provide native extension features.
 ## Install
 
 1. Copy this repository's manifest.json, ios/ and android/ into public/despia/metaads/ in your web app.
-2. Add "metaads" to public/despia/extensions.json: `{ "extensions": ["metaads"] }`. The minimal index requires the no-app-identity runtime change to have reached your build. The legacy index remains compatible.
+2. Add "metaads" to public/despia/extensions.json: `{ "extensions": ["metaads"] }`.
 3. Set FacebookAppID, FacebookClientToken and FacebookDisplayName in manifest.json under ios.app.info_plist. Set the matching Android APP_ID and CLIENT_TOKEN in MetaAdsExtension.java. Use app SDK configuration, never a server Graph API token.
 4. Verify the source and complete pinned dependency graph, then rebuild and install the native app. Copying files to the website does not update an installed app.
 

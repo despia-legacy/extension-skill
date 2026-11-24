@@ -4,6 +4,8 @@ Source preview. Native integration and runtime changes are under review; hosted 
 
 Source repository: [Alarms](https://github.com/despia-legacy/alarms).
 
+Bundled files: `examples/alarms/`, copied from the template repository. Copy `manifest.json`, `ios/` and `android/` to `public/despia/<id>/`, and put `extensions.json` in `public/despia/` or merge its name into your own; `alarms.policy.json` (named `policy.json` in the template) is build verification metadata and is not served.
+
 Alarms adds native alarms, timers and app-reported challenge workflows to a Despia V3 app. System alarms use AlarmKit on iOS 26 and later, including a countdown WidgetKit target. Android uses AlarmManager and a foreground audio service. Your app supplies the challenge UI and any exercise, scanning or other detection logic.
 
 You maintain the native code you copy or customize. This extension is experimental and targets the Despia V3 runtime. First-party V4 support comes through the separate package registry and API.

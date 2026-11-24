@@ -4,6 +4,8 @@ Documentation: https://setup.despia.com/experiments/samples/live-activities
 
 Source: [Live Activities repository](https://github.com/despia-legacy/live-activities). Read its [LICENSE](https://github.com/despia-legacy/live-activities/blob/main/LICENSE) before using or modifying the extension.
 
+Bundled files: `examples/live-activities/`, copied from the template repository. Copy `manifest.json`, `ios/` and `android/` to `public/despia/<id>/`, and put `extensions.json` in `public/despia/` or merge its name into your own; `live-activities.policy.json` is build verification metadata and is not served.
+
 This extension starts, updates, ends and lists native activities from your web app. It includes delivery, score and timer templates. On iOS it uses ActivityKit for the Lock Screen and Dynamic Island. On Android it uses ongoing notifications, with Live Updates on Android 16 and later when the system allows promotion.
 
 It is for the Despia V3 runtime. You own and maintain the copied native code. First-party V4 support comes through the new package registry. Read [V3 Extensions](https://setup.despia.com/experiments/v3-extensions) for build verification and rebuild requirements.

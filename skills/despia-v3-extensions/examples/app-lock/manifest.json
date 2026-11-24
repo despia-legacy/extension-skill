@@ -1,0 +1,412 @@
+{
+  "version": "1.0.0",
+  "bridge": {
+    "routes": [
+      {
+        "name": "capabilities",
+        "params": {},
+        "output": {
+          "variable": "appLockCapabilities",
+          "callback": "onAppLockCapabilities"
+        }
+      },
+      {
+        "name": "authorization",
+        "params": {
+          "request": {
+            "type": "bool"
+          },
+          "revoke": {
+            "type": "bool"
+          },
+          "member": {
+            "type": "enum",
+            "values": [
+              "individual",
+              "child"
+            ]
+          }
+        },
+        "output": {
+          "variable": "appLockAuthorization",
+          "callback": "onAppLockAuthorization"
+        }
+      },
+      {
+        "name": "groups",
+        "params": {},
+        "output": {
+          "variable": "appLockGroups",
+          "callback": "onAppLockGroups"
+        }
+      },
+      {
+        "name": "group_get",
+        "params": {
+          "id": {
+            "type": "string",
+            "max": 128,
+            "required": true
+          }
+        },
+        "output": {
+          "variable": "appLockGroupGet",
+          "callback": "onAppLockGroupGet"
+        }
+      },
+      {
+        "name": "group_save",
+        "params": {
+          "data": {
+            "type": "string",
+            "max": 4096,
+            "required": true
+          }
+        },
+        "output": {
+          "variable": "appLockGroupSave",
+          "callback": "onAppLockGroupSave"
+        }
+      },
+      {
+        "name": "group_delete",
+        "params": {
+          "id": {
+            "type": "string",
+            "max": 128,
+            "required": true
+          }
+        },
+        "output": {
+          "variable": "appLockGroupDelete",
+          "callback": "onAppLockGroupDelete"
+        }
+      },
+      {
+        "name": "select",
+        "params": {
+          "id": {
+            "type": "string",
+            "max": 128,
+            "required": true
+          }
+        },
+        "output": {
+          "variable": "appLockSelect",
+          "callback": "onAppLockSelect"
+        }
+      },
+      {
+        "name": "apply",
+        "params": {
+          "id": {
+            "type": "string",
+            "max": 128,
+            "required": true
+          }
+        },
+        "output": {
+          "variable": "appLockApply",
+          "callback": "onAppLockApply"
+        }
+      },
+      {
+        "name": "release",
+        "params": {
+          "id": {
+            "type": "string",
+            "max": 128,
+            "required": true
+          }
+        },
+        "output": {
+          "variable": "appLockRelease",
+          "callback": "onAppLockRelease"
+        }
+      },
+      {
+        "name": "release_all",
+        "params": {},
+        "output": {
+          "variable": "appLockReleaseAll",
+          "callback": "onAppLockReleaseAll"
+        }
+      },
+      {
+        "name": "schedules",
+        "params": {},
+        "output": {
+          "variable": "appLockSchedules",
+          "callback": "onAppLockSchedules"
+        }
+      },
+      {
+        "name": "schedule_save",
+        "params": {
+          "data": {
+            "type": "string",
+            "max": 4096,
+            "required": true
+          }
+        },
+        "output": {
+          "variable": "appLockScheduleSave",
+          "callback": "onAppLockScheduleSave"
+        }
+      },
+      {
+        "name": "schedule_delete",
+        "params": {
+          "id": {
+            "type": "string",
+            "max": 128,
+            "required": true
+          }
+        },
+        "output": {
+          "variable": "appLockScheduleDelete",
+          "callback": "onAppLockScheduleDelete"
+        }
+      },
+      {
+        "name": "events",
+        "params": {
+          "clear": {
+            "type": "bool"
+          }
+        },
+        "output": {
+          "variable": "appLockEvents",
+          "callback": "onAppLockEvents"
+        }
+      },
+      {
+        "name": "android_apps",
+        "params": {},
+        "output": {
+          "variable": "appLockAndroidApps",
+          "callback": "onAppLockAndroidApps"
+        }
+      },
+      {
+        "name": "android_accessibility",
+        "params": {
+          "request": {
+            "type": "bool"
+          }
+        },
+        "output": {
+          "variable": "appLockAndroidAccessibility",
+          "callback": "onAppLockAndroidAccessibility"
+        }
+      },
+      {
+        "name": "android_vpn",
+        "params": {
+          "action": {
+            "type": "enum",
+            "values": [
+              "status",
+              "start",
+              "stop"
+            ]
+          },
+          "data": {
+            "type": "string",
+            "max": 4096
+          }
+        },
+        "output": {
+          "variable": "appLockAndroidVpn",
+          "callback": "onAppLockAndroidVpn"
+        }
+      }
+    ],
+    "events": [
+      {
+        "name": "authorization",
+        "callback": "onAppLockAuthorization",
+        "scope": "document"
+      },
+      {
+        "name": "selection",
+        "callback": "onAppLockSelection",
+        "scope": "document"
+      },
+      {
+        "name": "changed",
+        "callback": "onAppLockChanged",
+        "scope": "document"
+      }
+    ]
+  },
+  "ios": {
+    "app": {
+      "entry_type": "AppLockExtension",
+      "sources": [
+        "ios/app/AppLockExtension.swift",
+        "ios/shared/LockStore.swift",
+        "ios/shared/LockRules.swift"
+      ],
+      "frameworks": [
+        "FamilyControls",
+        "ManagedSettings",
+        "DeviceActivity",
+        "SwiftUI",
+        "UIKit"
+      ],
+      "custom_keys": true,
+      "entitlements": {
+        "com.apple.developer.family-controls": true,
+        "com.apple.security.application-groups": [
+          "applock"
+        ]
+      },
+      "lifecycle": [
+        "launch"
+      ]
+    },
+    "targets": [
+      {
+        "kind": "custom",
+        "name": "NXLockMonitor",
+        "bundle_suffix": "NXLockMonitor",
+        "product_type": "com.apple.product-type.app-extension",
+        "product_file_type": "wrapper.app-extension",
+        "product_extension": "appex",
+        "embed": {
+          "into": "app",
+          "destination": "plugins"
+        },
+        "sources": [
+          "ios/monitor/LockMonitor.swift"
+        ],
+        "shared_sources": [
+          "ios/shared/LockStore.swift",
+          "ios/shared/LockRules.swift"
+        ],
+        "frameworks": [
+          "FamilyControls",
+          "ManagedSettings",
+          "DeviceActivity"
+        ],
+        "info_plist": {
+          "NSExtension": {
+            "NSExtensionPointIdentifier": "com.apple.deviceactivity.monitor-extension",
+            "NSExtensionPrincipalClass": "$(PRODUCT_MODULE_NAME).LockMonitor"
+          }
+        },
+        "entitlements": {
+          "com.apple.developer.family-controls": true,
+          "com.apple.security.application-groups": [
+            "applock"
+          ]
+        },
+        "deployment_target": "16.6",
+        "build_settings": {
+          "SWIFT_VERSION": "5.0",
+          "APPLICATION_EXTENSION_API_ONLY": "YES"
+        }
+      },
+      {
+        "kind": "custom",
+        "name": "NXLockShield",
+        "bundle_suffix": "NXLockShield",
+        "product_type": "com.apple.product-type.app-extension",
+        "product_file_type": "wrapper.app-extension",
+        "product_extension": "appex",
+        "embed": {
+          "into": "app",
+          "destination": "plugins"
+        },
+        "sources": [
+          "ios/shield/LockShield.swift"
+        ],
+        "shared_sources": [
+          "ios/shared/LockStore.swift",
+          "ios/shared/LockRules.swift"
+        ],
+        "frameworks": [
+          "FamilyControls",
+          "ManagedSettings",
+          "DeviceActivity",
+          "ManagedSettingsUI",
+          "UIKit"
+        ],
+        "info_plist": {
+          "NSExtension": {
+            "NSExtensionPointIdentifier": "com.apple.ManagedSettingsUI.shield-configuration-service",
+            "NSExtensionPrincipalClass": "$(PRODUCT_MODULE_NAME).LockShield"
+          }
+        },
+        "entitlements": {
+          "com.apple.developer.family-controls": true,
+          "com.apple.security.application-groups": [
+            "applock"
+          ]
+        },
+        "deployment_target": "16.6",
+        "build_settings": {
+          "SWIFT_VERSION": "5.0",
+          "APPLICATION_EXTENSION_API_ONLY": "YES"
+        }
+      },
+      {
+        "kind": "custom",
+        "name": "NXLockAction",
+        "bundle_suffix": "NXLockAction",
+        "product_type": "com.apple.product-type.app-extension",
+        "product_file_type": "wrapper.app-extension",
+        "product_extension": "appex",
+        "embed": {
+          "into": "app",
+          "destination": "plugins"
+        },
+        "sources": [
+          "ios/action/LockAction.swift"
+        ],
+        "shared_sources": [
+          "ios/shared/LockStore.swift",
+          "ios/shared/LockRules.swift"
+        ],
+        "frameworks": [
+          "FamilyControls",
+          "ManagedSettings",
+          "DeviceActivity"
+        ],
+        "info_plist": {
+          "NSExtension": {
+            "NSExtensionPointIdentifier": "com.apple.ManagedSettings.shield-action-service",
+            "NSExtensionPrincipalClass": "$(PRODUCT_MODULE_NAME).LockAction"
+          }
+        },
+        "entitlements": {
+          "com.apple.developer.family-controls": true,
+          "com.apple.security.application-groups": [
+            "applock"
+          ]
+        },
+        "deployment_target": "16.6",
+        "build_settings": {
+          "SWIFT_VERSION": "5.0",
+          "APPLICATION_EXTENSION_API_ONLY": "YES"
+        }
+      }
+    ]
+  },
+  "android": {
+    "entry_class": "despia.ext.applock.AppLockExtension",
+    "lifecycle": [
+      "application_create",
+      "activity_lifecycle"
+    ],
+    "modules": [
+      {
+        "kind": "custom",
+        "name": "applock",
+        "dir": "android/applock",
+        "link": "implementation"
+      }
+    ]
+  }
+}

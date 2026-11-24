@@ -12,7 +12,7 @@ The page only ever sees a recording id and its state. The audio never crosses th
 
 ## Build prerequisite
 
-Extension files must be compiled into a rebuilt native app. Uploading files does not change an installed binary. Automatic discovery of hosted `/despia/extensions.json` during a normal rebuild is under review and is not yet confirmed in deployed builds. See `troubleshooting.md`.
+Extension files must be compiled into a rebuilt native app. Uploading files does not change an installed binary. Extension builds are not yet open to every app. An app that serves `/despia/extensions.json` today gets a clear build error rather than a build without its extensions. The standard build of an app with no index is unchanged. There is no per-app enrollment switch. See `troubleshooting.md`.
 
 ## Files
 

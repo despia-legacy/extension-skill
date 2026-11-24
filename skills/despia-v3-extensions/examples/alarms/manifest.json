@@ -1,0 +1,299 @@
+{
+  "version": "1.0.0",
+  "bridge": {
+    "routes": [
+      {
+        "name": "capabilities",
+        "params": {},
+        "output": {
+          "variable": "alarmsCapabilities",
+          "callback": "onAlarmsCapabilities"
+        }
+      },
+      {
+        "name": "permissions",
+        "params": {
+          "request": {
+            "type": "bool"
+          },
+          "delivery": {
+            "type": "enum",
+            "values": [
+              "system",
+              "notification"
+            ]
+          }
+        },
+        "output": {
+          "variable": "alarmsPermissions",
+          "callback": "onAlarmsPermissions"
+        }
+      },
+      {
+        "name": "save",
+        "timeout_ms": 25000,
+        "params": {
+          "alarm": {
+            "type": "string",
+            "max": 4096,
+            "required": true
+          }
+        },
+        "output": {
+          "variable": "alarmsSave",
+          "callback": "onAlarmsSave"
+        }
+      },
+      {
+        "name": "get",
+        "params": {
+          "id": {
+            "type": "string",
+            "max": 36,
+            "required": true
+          }
+        },
+        "output": {
+          "variable": "alarmsGet",
+          "callback": "onAlarmsGet"
+        }
+      },
+      {
+        "name": "list",
+        "params": {
+          "group": {
+            "type": "string",
+            "max": 128
+          }
+        },
+        "output": {
+          "variable": "alarmsList",
+          "callback": "onAlarmsList"
+        }
+      },
+      {
+        "name": "cancel",
+        "params": {
+          "id": {
+            "type": "string",
+            "max": 36,
+            "required": true
+          }
+        },
+        "output": {
+          "variable": "alarmsCancel",
+          "callback": "onAlarmsCancel"
+        }
+      },
+      {
+        "name": "stop",
+        "params": {
+          "id": {
+            "type": "string",
+            "max": 36,
+            "required": true
+          },
+          "emergency": {
+            "type": "bool"
+          }
+        },
+        "output": {
+          "variable": "alarmsStop",
+          "callback": "onAlarmsStop"
+        }
+      },
+      {
+        "name": "snooze",
+        "params": {
+          "id": {
+            "type": "string",
+            "max": 36,
+            "required": true
+          },
+          "seconds": {
+            "type": "int",
+            "min": 1,
+            "max": 2147483647
+          }
+        },
+        "output": {
+          "variable": "alarmsSnooze",
+          "callback": "onAlarmsSnooze"
+        }
+      },
+      {
+        "name": "pause",
+        "params": {
+          "id": {
+            "type": "string",
+            "max": 36,
+            "required": true
+          }
+        },
+        "output": {
+          "variable": "alarmsPause",
+          "callback": "onAlarmsPause"
+        }
+      },
+      {
+        "name": "resume",
+        "params": {
+          "id": {
+            "type": "string",
+            "max": 36,
+            "required": true
+          }
+        },
+        "output": {
+          "variable": "alarmsResume",
+          "callback": "onAlarmsResume"
+        }
+      },
+      {
+        "name": "challenge",
+        "params": {
+          "id": {
+            "type": "string",
+            "max": 36,
+            "required": true
+          },
+          "progress": {
+            "type": "string",
+            "max": 64,
+            "required": true
+          }
+        },
+        "output": {
+          "variable": "alarmsChallenge",
+          "callback": "onAlarmsChallenge"
+        }
+      },
+      {
+        "name": "events",
+        "params": {},
+        "output": {
+          "variable": "alarmsEvents",
+          "callback": "onAlarmsEvents"
+        }
+      },
+      {
+        "name": "events_ack",
+        "params": {
+          "ids": {
+            "type": "string",
+            "max": 4096,
+            "required": true
+          }
+        },
+        "output": {
+          "variable": "alarmsEventsAck",
+          "callback": "onAlarmsEventsAck"
+        }
+      },
+      {
+        "name": "android_access",
+        "params": {
+          "access": {
+            "type": "enum",
+            "values": [
+              "exact_alarms",
+              "full_screen",
+              "notifications"
+            ],
+            "required": true
+          }
+        },
+        "output": {
+          "variable": "alarmsAndroidAccess",
+          "callback": "onAlarmsAndroidAccess"
+        }
+      }
+    ],
+    "events": [
+      {
+        "name": "changed",
+        "callback": "onAlarmsChanged",
+        "scope": "document"
+      },
+      {
+        "name": "permission",
+        "callback": "onAlarmsPermission",
+        "scope": "document"
+      }
+    ]
+  },
+  "ios": {
+    "app": {
+      "entry_type": "AlarmsExtension",
+      "sources": [
+        "ios/app/AlarmsExtension.swift",
+        "ios/app/AlarmValues.swift",
+        "ios/app/AlarmLedger.swift",
+        "ios/shared/AlarmMetadata.swift",
+        "ios/shared/AlarmOpenJournal.swift"
+      ],
+      "frameworks": [
+        "AlarmKit",
+        "AppIntents",
+        "ActivityKit",
+        "SwiftUI",
+        "UserNotifications"
+      ],
+      "info_plist": {
+        "NSSupportsLiveActivities": true,
+        "NSAlarmKitUsageDescription": "Schedule the alarms and timers you create in this app."
+      },
+      "custom_keys": true,
+      "lifecycle": [
+        "launch",
+        "terminate",
+        "notification",
+        "scene"
+      ],
+      "requires": {
+        "usage_descriptions": [
+          "NSAlarmKitUsageDescription"
+        ]
+      }
+    },
+    "targets": [
+      {
+        "kind": "widgetkit",
+        "name": "NXAlarmCountdown",
+        "sources": [
+          "ios/targets/NXAlarmCountdown/AlarmCountdownWidget.swift"
+        ],
+        "shared_sources": [
+          "ios/shared/AlarmMetadata.swift",
+          "ios/shared/AlarmOpenJournal.swift"
+        ],
+        "frameworks": [
+          "AlarmKit",
+          "AppIntents",
+          "ActivityKit",
+          "SwiftUI",
+          "WidgetKit"
+        ],
+        "info_plist": {
+          "NSSupportsLiveActivities": true
+        },
+        "deployment_target": "26.0"
+      }
+    ]
+  },
+  "android": {
+    "entry_class": "despia.ext.alarms.AlarmsExtension",
+    "lifecycle": [
+      "application_create",
+      "activity_lifecycle"
+    ],
+    "modules": [
+      {
+        "kind": "custom",
+        "name": "alarms",
+        "dir": "android/alarms",
+        "link": "implementation"
+      }
+    ]
+  }
+}

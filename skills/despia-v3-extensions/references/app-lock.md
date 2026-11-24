@@ -4,6 +4,8 @@ Source preview. Native integration and runtime changes are under review; hosted 
 
 Source repository: [App Lock](https://github.com/despia-legacy/app-lock).
 
+Bundled files: `examples/app-lock/`, copied from the template repository. Copy `manifest.json`, `ios/` and `android/` to `public/despia/<id>/`, and put `extensions.json` in `public/despia/` or merge its name into your own; `app-lock.policy.json` is build verification metadata and is not served.
+
 App Lock stores named groups of apps and websites, combines active groups, and schedules focus periods. iOS uses Family Controls, Managed Settings and Device Activity with native selection and shield extensions. Android provides a revocable foreground shield and an optional local DNS filter.
 
 You maintain the native code you copy or customize. This extension is experimental and targets the Despia V3 runtime. First-party V4 support comes through the separate package registry and API.

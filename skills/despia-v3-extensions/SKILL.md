@@ -9,9 +9,9 @@ An extension is native source compiled into a Despia V3 app, with a manifest-def
 
 ## Start with the right contract
 
-1. Confirm Despia V3, the target platforms and the actual native build/runtime version. Read `references/build-and-release.md` before promising inclusion or regeneration. Automatic discovery of hosted `/despia/extensions.json` during normal rebuilds is under review and is not confirmed deployed. Do not invent a per-app enablement switch, enrollment field or manual source-review prerequisite.
+1. Confirm Despia V3, the target platforms and the actual native build/runtime version. Read `references/build-and-release.md` before promising inclusion or regeneration. Extension builds are not yet open to every app. An app that serves `/despia/extensions.json` today gets a clear build error rather than a build without its extensions. The standard build of an app with no index is unchanged. There is no per-app enrollment switch. Do not invent an enrollment field or manual source-review prerequisite.
 2. Describe the native capability, target OS versions, web inputs and outputs, backend wire format if any, and what must survive page reload, backgrounding or process death. Read `references/limits.md`. If a system prompt or long operation is involved, design a prompt acknowledgement plus state/event routes rather than keeping a bridge call open indefinitely.
-3. Read `references/manifest.md` before writing JSON. The current index requires `app` identity and 1 to 8 extension folder names. A folder's `manifest.json` has `version`, not `id` or `manifest_version`. Optional-identity and other held rollout changes are not the current contract.
+3. Read `references/manifest.md` before writing JSON. The index needs only `extensions`, a list of 0 to 8 unique folder names. A legacy `app` block is optional and accepted only when it matches the build. A folder's `manifest.json` has `version`, not `id` or `manifest_version`.
 4. Read `references/routes-and-answers.md` before writing web code. Use the published npm SDK directly. Watch the exact declared output variable, serialize calls sharing it, and check both no-answer timeout and native `ok`. Do not invent SDK methods, callback-value fallback or event subscription APIs.
 
 ## Implement and verify
@@ -35,16 +35,16 @@ For web code, install `despia-native`, import `despia` from it and call `await d
 | Extension | Reference | Source |
 | --- | --- | --- |
 | Background Recorder | `references/recorder-sample.md`, bundled `examples/recorder/` | https://github.com/despia-legacy/recorder |
-| Live Activities | `references/live-activities-sample.md` | https://github.com/despia-legacy/live-activities |
-| Home Widgets | `references/home-widgets-sample.md` | https://github.com/despia-legacy/home-widgets |
-| Meta Ads (source preview) | `references/meta-ads-sample.md` | https://github.com/despia-legacy/meta-ads |
-| TikTok Ads (source preview) | `references/tiktok-ads-sample.md` | https://github.com/despia-legacy/tiktok-ads |
-| Google Ads (source preview) | `references/google-ads-sample.md` | https://github.com/despia-legacy/google-ads |
-| Calendar (source preview) | `references/calendar-sample.md` | https://github.com/despia-legacy/calendar |
-| Alarms (source preview) | `references/alarms.md` | https://github.com/despia-legacy/alarms |
-| App Lock (source preview) | `references/app-lock.md` | https://github.com/despia-legacy/app-lock |
+| Live Activities | `references/live-activities-sample.md`, bundled `examples/live-activities/` | https://github.com/despia-legacy/live-activities |
+| Home Widgets | `references/home-widgets-sample.md`, bundled `examples/home-widgets/` | https://github.com/despia-legacy/home-widgets |
+| Meta Ads (source preview) | `references/meta-ads-sample.md`, bundled `examples/meta-ads/` | https://github.com/despia-legacy/meta-ads |
+| TikTok Ads (source preview) | `references/tiktok-ads-sample.md`, bundled `examples/tiktok-ads/` | https://github.com/despia-legacy/tiktok-ads |
+| Google Ads (source preview) | `references/google-ads-sample.md`, bundled `examples/google-ads/` | https://github.com/despia-legacy/google-ads |
+| Calendar (source preview) | `references/calendar-sample.md`, bundled `examples/calendar/` | https://github.com/despia-legacy/calendar |
+| Alarms (source preview) | `references/alarms.md`, bundled `examples/alarms/` | https://github.com/despia-legacy/alarms |
+| App Lock (source preview) | `references/app-lock.md`, bundled `examples/app-lock/` | https://github.com/despia-legacy/app-lock |
 
-For iOS App Tracking Transparency requests and status, read `references/tracking-consent.md`. For authoring a new extension from scratch, read `references/authoring.md`. The Home Widgets extension is separate from the first-party Home Widget setting (`widget://`), which needs no extension.
+For iOS App Tracking Transparency requests and status, read `references/tracking-consent.md`. For authoring a new extension from scratch, read `references/authoring.md`. The Home Widgets extension is separate from the first-party Home Widget setting (`widget://`), which needs no extension. Choose the setting when one backend SVG, refreshed in the background, is enough, and the extension when the page must fill native stat and list widgets and read taps.
 
 Read the extension's actual routes, platform requirements and recorded test scope before adapting it. Keep stable identifiers and existing extension names when changing the index. Recorder's own raw audio PUT uploader is separate from a general file-picker or multipart background-upload capability. Do not promise an untested combination, indefinite background execution or recovery after every kind of termination.
 
@@ -60,7 +60,7 @@ Preserve each extension's LICENSE, copyright and third-party notices. Standalone
 
 ## Delivery boundaries
 
-- Preserve build-owned app identity, signing, host permissions and entitlements. A manifest declaration is neither runtime user consent nor an Apple capability grant. Use the currently supported configuration path, not a field from a held proposal.
+- Preserve the build-owned client id, bundle id, package name, signing, host permissions and entitlements. A manifest declaration is neither runtime user consent nor an Apple capability grant. Use the currently supported configuration path, not a field from a held proposal.
 - Files must stay inside the extension tree and be declared. Custom Android modules cover their approved directory trees recursively. Apply the exact path rules in `references/manifest.md`; do not copy editor caches, secrets or arbitrary hidden files.
 - Keep credentials, private URLs and user content out of examples and diagnostic logs. Use sanitized error codes and source/build identifiers when reporting failures.
 - Report what ran, on which source/artifact and with what limits. A default build, simulated handler, sample test or successful signing step does not prove a selected feature is ready for production.

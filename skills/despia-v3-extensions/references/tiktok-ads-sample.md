@@ -4,6 +4,8 @@ Publication and runtime hold: these source previews require the app changes, aut
 
 Source repository: [TikTok Ads](https://github.com/despia-legacy/tiktok-ads).
 
+Bundled files: `examples/tiktok-ads/`, copied from the template repository. Copy `manifest.json`, `ios/` and `android/` to `public/despia/<id>/`, and put `extensions.json` in `public/despia/` or merge its name into your own; `tiktok-ads.policy.json` is build verification metadata and is not served.
+
 A native advertiser SDK extension using TikTok App Events SDK 1.7.2 on iOS and 1.7.1 on Android, independently of AppsFlyer. It sends custom and standard events and purchases through the SDK. It does not display Pangle ads.
 
 For the Despia V3 runtime. First-party V4 support comes through the new package registry.
@@ -25,7 +27,7 @@ app. A browser preview alone does not provide native extension features.
 ## Install
 
 1. Copy manifest.json, ios/ and android/ into public/despia/tiktokads/ in your web app.
-2. Add "tiktokads" to public/despia/extensions.json: `{ "extensions": ["tiktokads"] }`. This minimal index requires the no-app-identity runtime change in the build; legacy indexes remain compatible.
+2. Add "tiktokads" to public/despia/extensions.json: `{ "extensions": ["tiktokads"] }`.
 3. Replace the native configuration placeholders in TikTokAdsExtension.swift and TikTokAdsExtension.java with the app SDK configuration provided by TikTok. Never embed a server-side Marketing API credential. Do not log this configuration or put it in a page URL.
 4. Verify the source and complete pinned dependency graph, then rebuild and install the native app.
 

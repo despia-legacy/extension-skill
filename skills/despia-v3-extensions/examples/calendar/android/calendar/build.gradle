@@ -1,0 +1,17 @@
+apply plugin: 'com.android.library'
+android {
+    namespace 'despia.ext.calendar'
+    compileSdk 36
+    defaultConfig { minSdk 24 }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.json:json:20250517'
+    implementation project(':nativeext-api')
+    implementation 'androidx.activity:activity:1.13.0'
+    implementation 'androidx.core:core:1.18.0'
+}

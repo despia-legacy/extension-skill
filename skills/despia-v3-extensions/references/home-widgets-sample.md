@@ -4,7 +4,11 @@ Documentation: https://setup.despia.com/experiments/samples/home-widgets
 
 Source: [Home Widgets repository](https://github.com/despia-legacy/home-widgets). Read its [LICENSE](https://github.com/despia-legacy/home-widgets/blob/main/LICENSE) before using or modifying the extension.
 
+Bundled files: `examples/home-widgets/`, copied from the template repository. Copy `manifest.json`, `ios/` and `android/` to `public/despia/<id>/`, and put `extensions.json` in `public/despia/` or merge its name into your own; `home-widgets.policy.json` is build verification metadata and is not served.
+
 This extension puts data from your web app into native home-screen widgets. It includes a stat card and a list with buttons and checkboxes. The page sets and reads the widget data, reloads the extension's widgets, lists installed widgets and reads queued taps.
+
+The first-party Home Widget setting (`widget://`, page https://setup.despia.com/native-features/home-widgets) is separate and needs no extension. Choose it when one SVG from your backend, refreshed in the background, is enough. Choose this extension when the page must fill native stat and list widgets and read taps on their buttons and checkboxes.
 
 It is for the Despia V3 runtime. You own and maintain the copied native code. First-party V4 support comes through the new package registry. Read [V3 Extensions](https://setup.despia.com/experiments/v3-extensions) for build verification and rebuild requirements.
 

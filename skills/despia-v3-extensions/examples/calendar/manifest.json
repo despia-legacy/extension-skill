@@ -1,0 +1,331 @@
+{
+  "version": "1.0.0",
+  "bridge": {
+    "routes": [
+      {
+        "name": "capabilities",
+        "params": {}
+      },
+      {
+        "name": "permissions",
+        "params": {
+          "request": {
+            "type": "bool"
+          },
+          "access": {
+            "type": "enum",
+            "values": [
+              "full",
+              "write_only",
+              "reminders"
+            ]
+          }
+        }
+      },
+      {
+        "name": "calendars",
+        "params": {
+          "entity": {
+            "type": "enum",
+            "values": [
+              "events",
+              "reminders"
+            ]
+          }
+        }
+      },
+      {
+        "name": "calendar_save",
+        "params": {
+          "data": {
+            "type": "string",
+            "max": 4096,
+            "required": true
+          },
+          "entity": {
+            "type": "enum",
+            "values": [
+              "events",
+              "reminders"
+            ]
+          }
+        }
+      },
+      {
+        "name": "calendar_delete",
+        "params": {
+          "id": {
+            "type": "string",
+            "max": 256,
+            "required": true
+          },
+          "entity": {
+            "type": "enum",
+            "values": [
+              "events",
+              "reminders"
+            ]
+          }
+        }
+      },
+      {
+        "name": "events",
+        "params": {
+          "start_ms": {
+            "type": "int",
+            "min": -9007199254740991,
+            "max": 9007199254740991,
+            "required": true
+          },
+          "end_ms": {
+            "type": "int",
+            "min": -9007199254740991,
+            "max": 9007199254740991,
+            "required": true
+          },
+          "calendar_id": {
+            "type": "string",
+            "max": 256
+          },
+          "offset": {
+            "type": "int",
+            "min": 0,
+            "max": 100000
+          },
+          "limit": {
+            "type": "int",
+            "min": 1,
+            "max": 100
+          }
+        }
+      },
+      {
+        "name": "event_get",
+        "params": {
+          "id": {
+            "type": "string",
+            "max": 256,
+            "required": true
+          }
+        }
+      },
+      {
+        "name": "event_save",
+        "params": {
+          "data": {
+            "type": "string",
+            "max": 4096,
+            "required": true
+          },
+          "span": {
+            "type": "enum",
+            "values": [
+              "this",
+              "future"
+            ]
+          }
+        }
+      },
+      {
+        "name": "event_delete",
+        "params": {
+          "id": {
+            "type": "string",
+            "max": 256,
+            "required": true
+          },
+          "span": {
+            "type": "enum",
+            "values": [
+              "this",
+              "future"
+            ]
+          }
+        }
+      },
+      {
+        "name": "present",
+        "params": {
+          "id": {
+            "type": "string",
+            "max": 256
+          },
+          "data": {
+            "type": "string",
+            "max": 4096
+          },
+          "mode": {
+            "type": "enum",
+            "values": [
+              "view",
+              "edit",
+              "create"
+            ]
+          }
+        }
+      },
+      {
+        "name": "ios_reminders",
+        "params": {
+          "calendar_id": {
+            "type": "string",
+            "max": 256
+          },
+          "completed": {
+            "type": "bool"
+          },
+          "offset": {
+            "type": "int",
+            "min": 0,
+            "max": 100000
+          },
+          "limit": {
+            "type": "int",
+            "min": 1,
+            "max": 100
+          }
+        }
+      },
+      {
+        "name": "ios_reminder_save",
+        "params": {
+          "data": {
+            "type": "string",
+            "max": 4096,
+            "required": true
+          }
+        }
+      },
+      {
+        "name": "ios_reminder_delete",
+        "params": {
+          "id": {
+            "type": "string",
+            "max": 256,
+            "required": true
+          }
+        }
+      },
+      {
+        "name": "ios_sources",
+        "params": {}
+      },
+      {
+        "name": "android_table",
+        "params": {
+          "table": {
+            "type": "enum",
+            "values": [
+              "events",
+              "instances",
+              "attendees",
+              "reminders",
+              "calendars"
+            ],
+            "required": true
+          },
+          "operation": {
+            "type": "enum",
+            "values": [
+              "query",
+              "insert",
+              "update",
+              "delete"
+            ],
+            "required": true
+          },
+          "id": {
+            "type": "string",
+            "max": 256
+          },
+          "event_id": {
+            "type": "string",
+            "max": 256
+          },
+          "data": {
+            "type": "string",
+            "max": 4096
+          },
+          "start_ms": {
+            "type": "int",
+            "min": -9007199254740991,
+            "max": 9007199254740991
+          },
+          "end_ms": {
+            "type": "int",
+            "min": -9007199254740991,
+            "max": 9007199254740991
+          },
+          "offset": {
+            "type": "int",
+            "min": 0,
+            "max": 100000
+          },
+          "limit": {
+            "type": "int",
+            "min": 1,
+            "max": 100
+          }
+        }
+      }
+    ],
+    "events": [
+      {
+        "name": "permission",
+        "callback": "onCalendarPermission",
+        "scope": "document"
+      },
+      {
+        "name": "editor",
+        "callback": "onCalendarEditor",
+        "scope": "document"
+      },
+      {
+        "name": "changed",
+        "callback": "onCalendarChanged",
+        "scope": "document"
+      }
+    ]
+  },
+  "ios": {
+    "app": {
+      "entry_type": "CalendarExtension",
+      "sources": [
+        "ios/app/CalendarExtension.swift"
+      ],
+      "frameworks": [
+        "EventKit",
+        "EventKitUI",
+        "CoreLocation"
+      ],
+      "requires": {
+        "usage_descriptions": [
+          "NSCalendarsUsageDescription",
+          "NSCalendarsFullAccessUsageDescription",
+          "NSCalendarsWriteOnlyAccessUsageDescription",
+          "NSRemindersUsageDescription",
+          "NSRemindersFullAccessUsageDescription"
+        ]
+      },
+      "lifecycle": [
+        "launch",
+        "terminate"
+      ]
+    }
+  },
+  "android": {
+    "entry_class": "despia.ext.calendar.CalendarExtension",
+    "lifecycle": [
+      "application_create",
+      "activity_lifecycle"
+    ],
+    "modules": [
+      {
+        "kind": "custom",
+        "name": "calendar",
+        "dir": "android/calendar",
+        "link": "implementation"
+      }
+    ]
+  }
+}
