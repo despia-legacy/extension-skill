@@ -20,6 +20,8 @@ Built into the Despia V3 app; nothing to install (iOS needs the Home Widgets wid
 ## Rules
 
 - Only elements, styles, operators and families listed in the guide exist; never invent one.
+- Write every formula from the guide's operator tables (arguments, result, example); never guess a signature. A one-key options object needs `lit`: `{"lit": {"decimals": 2}}`.
+- No value is converted: `{"+": ["1", 2]}` is an error; join text with `cat`. Only `false` and `null` count as false.
 - Send state, not documents, for updates; keep an activity's attributes and state under 4 KB.
 - A `list` needs `max`; single-tap families use the layout's `widgetUrl`, not a `link`.
 - Give `image.symbol` both `ios` and `android` names, or use `svg`.
