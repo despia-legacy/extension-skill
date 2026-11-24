@@ -90,6 +90,27 @@
         }
       },
       {
+        "name": "conversion_measurement",
+        "params": {
+          "email": {
+            "type": "string",
+            "max": 254
+          },
+          "phone": {
+            "type": "string",
+            "max": 16
+          },
+          "hashed_email": {
+            "type": "string",
+            "max": 64
+          },
+          "hashed_phone": {
+            "type": "string",
+            "max": 64
+          }
+        }
+      },
+      {
         "name": "reset",
         "params": {}
       }

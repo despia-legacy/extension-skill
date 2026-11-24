@@ -17,6 +17,11 @@ public final class GoogleAdsExtension implements NativeExtension {
 
     @Override public void handle(ExtCall call, ExtResult.Callback reply) {
         try {
+            if (call.route.equals("conversion_measurement")) {
+                // Google Ads on-device conversion measurement exists for iOS App campaigns only
+                // (Google Ads Help 12119136, read 24 November 2026); Firebase Android has no such call.
+                reply.reply(ExtResult.error("platform_limit", "On-device conversion measurement is available for iOS App campaigns only")); return;
+            }
             if (call.route.equals("status")) {
                 reply.reply(ExtResult.ok(state().put("sdk", "BOM35.2.0"))); return;
             }
