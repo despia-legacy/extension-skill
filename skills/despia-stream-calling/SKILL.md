@@ -24,6 +24,7 @@ A Despia V3 extension (`npx despia-extensions add stream-calling`), then a new b
 - Audio calls only; do not promise video or screen share.
 - One VoIP owner per app: no other PushKit code in the base app.
 - Remove China from the iOS app's territories (CallKit).
+- Branch on `onStreamcallEnded`'s `reason` from the guide's table; `answered_elsewhere` comes only on iOS, and only Android ends an outgoing call with `rejected` (iOS sends a `rejected` error per callee and keeps the call).
 - Prove ringing on real devices with the app closed; a simulator or browser does not ring.
 
 The full guide is `references/guide.md`, generated from https://setup.despia.com/extensions/catalog/stream-calling. Where this file and the guide differ, the guide is right; report it.
