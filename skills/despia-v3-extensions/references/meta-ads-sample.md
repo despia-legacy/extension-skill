@@ -4,7 +4,7 @@ Publication and runtime hold: these source previews require the app changes, aut
 
 Source repository: [Meta Ads](https://github.com/despia-legacy/meta-ads).
 
-Bundled files: `examples/meta-ads/`, copied from the template repository. Copy `manifest.json`, `ios/` and `android/` to `public/despia/<id>/`, and put `extensions.json` in `public/despia/` or merge its name into your own; `meta-ads.policy.json` is build verification metadata and is not served.
+Bundled files: `examples/meta-ads/`, copied from the template repository. Copy `manifest.json`, `ios/` and `android/` to `public/despia/<id>/`, and put `extensions.json` in `public/despia/` or merge its name into your own; `metaads.policy.json` is build verification metadata and is not served.
 
 A native advertiser SDK extension using Meta Facebook Core SDK 19.0.1 on iOS and Android, independently of AppsFlyer. It sends app activation, custom or standard events and purchases through the SDK. It does not display Audience Network ads.
 

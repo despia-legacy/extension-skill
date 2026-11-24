@@ -4,7 +4,7 @@ Publication and runtime hold: these source previews require the app changes, aut
 
 Source repository: [TikTok Ads](https://github.com/despia-legacy/tiktok-ads).
 
-Bundled files: `examples/tiktok-ads/`, copied from the template repository. Copy `manifest.json`, `ios/` and `android/` to `public/despia/<id>/`, and put `extensions.json` in `public/despia/` or merge its name into your own; `tiktok-ads.policy.json` is build verification metadata and is not served.
+Bundled files: `examples/tiktok-ads/`, copied from the template repository. Copy `manifest.json`, `ios/` and `android/` to `public/despia/<id>/`, and put `extensions.json` in `public/despia/` or merge its name into your own; `tiktokads.policy.json` is build verification metadata and is not served.
 
 A native advertiser SDK extension using TikTok App Events SDK 1.7.2 on iOS and 1.7.1 on Android, independently of AppsFlyer. It sends custom and standard events and purchases through the SDK. It does not display Pangle ads.
 
@@ -89,7 +89,7 @@ SKAdNetworkItems under ios.app.info_plist is customer-editable and starts empty.
 
 Adapt the native code if the app deliberately shares TikTok SDK with another integration. The SDK can use app-wide lifecycle and exception handling, so test it with the app's other native integrations.
 
-Current V3 iOS target is 16.6 and later. Android module minSdk24 and compileSdk36. Billing is a vendor dependency, not a purchase UI supplied by this extension; review its merged permission and the base billing configuration during build verification.
+Current V3 iOS target is 16.6 and later. Android module minSdk24 and compileSdk36. Billing is a vendor dependency, not a purchase UI supplied by this extension; review its merged permission and the base billing configuration during build verification. The module uses Play Billing 8.3.0, the version the V3 base app ships with RevenueCat 10.27.1: Billing 9.1.0 (18 June 2026, read 24 November 2026 on Google Maven) is the latest release, but a newer Billing in the module would replace the one RevenueCat 10 is built against. Lifecycle is at 2.10.0, the version the base app uses: Lifecycle 2.11.0 and later (2.11.1 of 19 November 2026 is the latest) need compile SDK 37, and the V3 base app builds with compile SDK 36 and AGP 8.9.1. Install Referrer is at 2.2, the latest release.
 
 [Despia V3 Extensions documentation](https://setup.despia.com/experiments/v3-extensions) and [extension skill](https://github.com/despia-legacy/extension-skill).
 

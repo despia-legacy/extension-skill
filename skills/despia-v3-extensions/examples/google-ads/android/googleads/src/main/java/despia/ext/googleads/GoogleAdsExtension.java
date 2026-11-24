@@ -18,7 +18,7 @@ public final class GoogleAdsExtension implements NativeExtension {
     @Override public void handle(ExtCall call, ExtResult.Callback reply) {
         try {
             if (call.route.equals("status")) {
-                reply.reply(ExtResult.ok(state().put("sdk", "BOM34.11.0"))); return;
+                reply.reply(ExtResult.ok(state().put("sdk", "BOM35.2.0"))); return;
             }
             if (call.route.equals("configure")) {
                 if (configured) { reply.reply(ExtResult.ok(state())); return; }
