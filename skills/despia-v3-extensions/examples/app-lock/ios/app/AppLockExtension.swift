@@ -210,8 +210,8 @@ private struct SelectionView: View {
             FamilyActivityPicker(selection: $selection)
                 .navigationTitle(title)
                 .toolbar {
-                    ToolbarItem(placement: .cancellationAction) { Button("Cancel") { finish(nil) } }
-                    ToolbarItem(placement: .confirmationAction) { Button("Save") { finish(selection) } }
+                    SwiftUI.ToolbarItem(placement: .cancellationAction) { Button("Cancel") { finish(nil) } }
+                    SwiftUI.ToolbarItem(placement: .confirmationAction) { Button("Save") { finish(selection) } }
                 }
         }
     }
