@@ -1,10 +1,13 @@
-# Despia V3 Extensions skill
+# Despia V3 Extensions skills
 
-An Agent Skill that teaches an AI coding agent to write a Despia V3 Extension: native Swift and Kotlin or Java code called from a V3 web-view app with `extension://<name>/<route>`. It is for the Despia V3 runtime only, and V3 Extensions are experimental. First-party V4 support comes through the new package registry.
+Agent Skills that teach a coding agent to install, configure and build Despia V3 extensions: native Swift and Kotlin or Java code called from a V3 app with `extension://<name>/<route>`. They are for the Despia V3 runtime only.
 
-The skill separates the native contract, installed-build verification and platform behavior. It uses the published Despia JS SDK directly and includes troubleshooting for hosting, manifests, missing answers, permissions and background work.
+| Skill | Your agent uses it to |
+| --- | --- |
+| `skills/despia-extensions-cli` | Find, install, configure, update, remove and check ready-made extensions with `npx despia-extensions` |
+| `skills/despia-v3-extensions` | Build your own extension: create, validate, mock, compile and test, with the native contract and the fix for every error code |
 
-The skill is self-contained: `skills/despia-v3-extensions/SKILL.md` is the workflow, `references/` holds the manifest, bridge and platform facts plus Background Recorder, Live Activities and Home Widgets references. `examples/recorder/` holds the Background Recorder extension files. The Live Activities and Home Widgets references include their routes, answers and platform limits. Docs: https://setup.despia.com/experiments/v3-extensions
+Each skill matches its docs pages, which it names: https://setup.despia.com/extensions/install and https://setup.despia.com/extensions/overview. The references under `skills/despia-v3-extensions/references/` are generated from those pages. `examples/recorder/` holds the Background Recorder extension files. Guide: https://setup.despia.com/extensions/ai-skills
 
 ## Install
 
@@ -12,14 +15,15 @@ With the `skills` CLI:
 
 ```bash
 npx skills add despia-legacy/extension-skill
+npx skills add despia-legacy/extension-skill --skill despia-extensions-cli -a claude-code
 ```
 
-With Claude Code, copy the skill folder into your project (or `~/.claude/skills/` for all projects):
+Skills go into the current project by default; add `-g` for every project. To copy a folder yourself, put it in your agent's skill folder: `.claude/skills/` for Claude Code, `.agents/skills/` for Codex and Cursor.
 
 ```bash
 git clone https://github.com/despia-legacy/extension-skill
 mkdir -p .claude/skills
-cp -R extension-skill/skills/despia-v3-extensions .claude/skills/
+cp -R extension-skill/skills/despia-extensions-cli extension-skill/skills/despia-v3-extensions .claude/skills/
 ```
 
 ## License
