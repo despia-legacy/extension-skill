@@ -210,6 +210,25 @@ public final class CalendarExtension implements NativeExtension {
         if (!row.isNull("rdate")) update.withValue("rdate", row.getString("rdate"));
         return update;
     }
+    /** Puts a local series' exceptions back into Instances, appended to {@code operations} after the series write. For a
+     *  series with no sync id the provider re-expands only the row it just wrote: it deletes the instances of the series
+     *  and of every exception (by _id or original_id), then expands that one row, so a series update drops its
+     *  exceptions' instances and an exception insert drops the series' instances (AOSP CalendarInstancesHelper
+     *  updateRecurrenceInstancesLocked and getRelevantRecurrenceEntries, read 24 November 2026). An update that carries
+     *  DTSTART and DTEND but not ORIGINAL_ID takes the provider's single-event path and inserts that exception's instance
+     *  again. Exceptions replacing a slot at or after {@code before} are skipped: the same batch deletes them. */
+    private void refreshExceptions(String seriesId, Long before, ArrayList<ContentProviderOperation> operations) throws JSONException {
+        JSONArray rows = query(CalendarContract.Events.CONTENT_URI, new String[]{"_id", "dtstart", "dtend", "duration", "allDay", "originalInstanceTime", "eventStatus"},
+            "original_id = ? AND deleted = 0", new String[]{seriesId}, null, 0, 1000, "rows").getJSONArray("rows");
+        for (int n = 0; n < rows.length(); n++) {
+            JSONObject r = rows.getJSONObject(n);
+            if (before != null && !r.isNull("originalInstanceTime") && r.getLong("originalInstanceTime") >= before) continue;
+            if (!r.isNull("eventStatus") && r.optInt("eventStatus") == CalendarContract.Events.STATUS_CANCELED) continue;
+            long start = r.getLong("dtstart");
+            operations.add(ContentProviderOperation.newUpdate(item(CalendarContract.Events.CONTENT_URI, r.getString("_id")))
+                .withValue("dtstart", start).withValue("dtend", start + durationMs(r)).withValue("allDay", r.optInt("allDay")).build());
+        }
+    }
     private static boolean recurring(JSONObject row) { return !row.optString("rrule", "").isEmpty() && !row.isNull("rrule") || !row.optString("rdate", "").isEmpty() && !row.isNull("rdate"); }
     /** The occurrence start a span acts from: occurrence_ms (it must be an instance of this event), else the series start. */
     private long occurrence(Map<String,Object> p, JSONObject row) throws JSONException {
@@ -229,7 +248,16 @@ public final class CalendarExtension implements NativeExtension {
         return out.append(";UNTIL=").append(format.format(new Date(occurrence - (allDay ? 86400000L : 1000L)))).toString();
     }
     /** Occurrences of the series that start before {@code before}, to carry a COUNT over a split. */
-    private int countBefore(JSONObject row, long before) throws JSONException {
+    private int countBefore(JSONObject row, long before) throws Exception {
+        boolean local = !synced(row);
+        if (local) {
+            // The series' own instances may be missing after an exception write (see refreshExceptions): expand it again.
+            ArrayList<ContentProviderOperation> refresh = new ArrayList<>();
+            String id = String.valueOf(row.getLong("_id"));
+            refresh.add(seriesUpdate(id, row).withExpectedCount(1).build());
+            refreshExceptions(id, null, refresh);
+            resolver.applyBatch(CalendarContract.AUTHORITY, refresh);
+        }
         Uri.Builder builder = CalendarContract.Instances.CONTENT_URI.buildUpon(); ContentUris.appendId(builder, row.getLong("dtstart")); ContentUris.appendId(builder, before);
         int total = 0, offset = 0;
         while (true) {
@@ -242,8 +270,9 @@ public final class CalendarExtension implements NativeExtension {
         for (long excluded : exdates(row)) if (excluded >= row.getLong("dtstart") && excluded < before) total++;
         java.util.List<Long> excluded = exdates(row);
         JSONArray detached = query(CalendarContract.Events.CONTENT_URI, new String[]{"_id", "originalInstanceTime"}, "original_id = ? AND originalInstanceTime < ?", new String[]{String.valueOf(row.getLong("_id")), String.valueOf(before)}, null, 0, 1000, "rows").getJSONArray("rows");
-        // A local exception's slot is also in EXDATE (see synced()), so it is counted once.
-        for (int n = 0; n < detached.length(); n++) if (!excluded.contains(detached.getJSONObject(n).getLong("originalInstanceTime"))) total++;
+        // A synced exception cancels its slot in the series' instances. A local one does not (its slot is in EXDATE when
+        // this extension wrote it, otherwise the series instance is still there), so it is never added again.
+        if (!local) for (int n = 0; n < detached.length(); n++) if (!excluded.contains(detached.getJSONObject(n).getLong("originalInstanceTime"))) total++;
         return total;
     }
     /** The series EXDATE entries as Unix ms: "yyyyMMdd'T'HHmmss'Z'", a local time with an optional TZID, or a date. */
@@ -316,7 +345,10 @@ public final class CalendarExtension implements NativeExtension {
             ArrayList<ContentProviderOperation> operations = new ArrayList<>();
             boolean allDay = row.optInt("allDay") != 0;
             String rule = row.optString("rrule", "");
-            if (!whole) operations.add(seriesUpdate(id, row).withValue("rrule", until(rule, at, allDay)).withExpectedCount(1).build());
+            if (!whole) {
+                operations.add(seriesUpdate(id, row).withValue("rrule", until(rule, at, allDay)).withExpectedCount(1).build());
+                if (!synced(row)) refreshExceptions(id, at, operations);
+            }
             java.util.Set<Long> replaced = new java.util.HashSet<>();
             JSONArray later = query(CalendarContract.Events.CONTENT_URI, new String[]{"originalInstanceTime"}, "original_id = ? AND originalInstanceTime >= ?", new String[]{id, String.valueOf(at)}, null, 0, 1000, "rows").getJSONArray("rows");
             for (int n = 0; n < later.length(); n++) replaced.add(later.getJSONObject(n).getLong("originalInstanceTime"));
@@ -369,7 +401,6 @@ public final class CalendarExtension implements NativeExtension {
         if (data.has("timezone")) { String zone = data.getString("timezone"); if (!Arrays.asList(TimeZone.getAvailableIDs()).contains(zone)) throw new IllegalArgumentException("Unknown timezone"); values.put("eventTimezone", zone); }
         JSONObject android = data.optJSONObject("android"); if (android != null) values.putAll(content(android));
         ArrayList<ContentProviderOperation> operations = new ArrayList<>();
-        if (!synced(row)) operations.add(seriesUpdate(id, row).withValue("exdate", withExdate(row, at)).withExpectedCount(1).build());
         int insert = operations.size();
         operations.add(ContentProviderOperation.newInsert(ContentUris.withAppendedId(CalendarContract.Events.CONTENT_EXCEPTION_URI, Long.parseLong(id))).withValues(values).build());
         JSONArray alarms = data.optJSONArray("alarms");
@@ -378,6 +409,13 @@ public final class CalendarExtension implements NativeExtension {
         if (alarms != null) for (int n = 0; n < alarms.length(); n++) {
             long minutes = integer(alarms.getJSONObject(n).get("minutes")); if (minutes < 0) throw new IllegalArgumentException("Android reminders must be before the event");
             operations.add(ContentProviderOperation.newInsert(CalendarContract.Reminders.CONTENT_URI).withValue("minutes", minutes).withValue("method", CalendarContract.Reminders.METHOD_ALERT).withValueBackReference("event_id", insert).build());
+        }
+        if (!synced(row)) {
+            // Local: the replaced slot goes into EXDATE, then the series and every exception, this one too, are expanded again.
+            operations.add(seriesUpdate(id, row).withValue("exdate", withExdate(row, at)).withExpectedCount(1).build());
+            refreshExceptions(id, null, operations);
+            operations.add(ContentProviderOperation.newUpdate(CalendarContract.Events.CONTENT_URI).withSelection("_id = ?", new String[]{""}).withSelectionBackReference(0, insert)
+                .withValue("dtstart", start).withValue("dtend", end).withValue("allDay", values.containsKey("allDay") ? values.getAsInteger("allDay") : row.optInt("allDay")).build());
         }
         ContentProviderResult[] result = resolver.applyBatch(CalendarContract.AUTHORITY, operations);
         if (result[insert].uri == null) throw new IllegalStateException();
@@ -412,12 +450,14 @@ public final class CalendarExtension implements NativeExtension {
             } else {
                 operations.add(seriesUpdate(id, row).withValue("rrule", until(row.optString("rrule", ""), at, row.optInt("allDay") != 0)).withExpectedCount(1).build());
                 operations.add(ContentProviderOperation.newDelete(CalendarContract.Events.CONTENT_URI).withSelection("original_id = ? AND originalInstanceTime >= ?", new String[]{id, String.valueOf(at)}).build());
+                if (!synced(row)) refreshExceptions(id, at, operations);
             }
         } else if (synced(row)) {
             operations.add(ContentProviderOperation.newInsert(ContentUris.withAppendedId(CalendarContract.Events.CONTENT_EXCEPTION_URI, Long.parseLong(id)))
                 .withValue(CalendarContract.Events.ORIGINAL_INSTANCE_TIME, at).withValue(CalendarContract.Events.STATUS, CalendarContract.Events.STATUS_CANCELED).build());
         } else {
             operations.add(seriesUpdate(id, row).withValue("exdate", withExdate(row, at)).withExpectedCount(1).build());
+            refreshExceptions(id, null, operations);
         }
         resolver.applyBatch(CalendarContract.AUTHORITY, operations);
         return ExtResult.ok(new JSONObject().put("deleted", true));
@@ -427,6 +467,11 @@ public final class CalendarExtension implements NativeExtension {
         ArrayList<ContentProviderOperation> operations = new ArrayList<>();
         String id = data.optString("id", "");
         eventOperations(data, operations);
+        if (!id.isEmpty() && (data.has("start_ms") || data.has("recurrence"))) {
+            // A local series written with its start is expanded again alone (see refreshExceptions).
+            JSONObject row = series(id);
+            if (recurring(row) && !synced(row)) refreshExceptions(id, null, operations);
+        }
         ContentProviderResult[] result = resolver.applyBatch(CalendarContract.AUTHORITY, operations);
         if (id.isEmpty()) { if (result[0].uri == null) throw new IllegalStateException(); id = result[0].uri.getLastPathSegment(); }
         return ExtResult.ok(new JSONObject().put("id", id).put("saved", true));
