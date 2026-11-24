@@ -40,4 +40,16 @@ public class CalendarValuesTest {
             catch(InvocationTargetException expected){assertTrue(expected.getCause() instanceof IllegalArgumentException);}
         }
     }
+    @Test public void futureSpanOnDetachedOccurrenceActsOnItsSeries() throws Exception {
+        // The events route returns a modified occurrence under its exception row id; a future span from it acts on the
+        // series from the slot it replaced, not on that one row.
+        JSONObject exception = new JSONObject("{\"_id\":42,\"original_id\":\"7\",\"originalInstanceTime\":1767261600000,\"dtstart\":1767265200000,\"rrule\":null}");
+        assertTrue(CalendarExtension.detached(exception));
+        assertArrayEquals(new long[]{7L, 1767261600000L}, CalendarExtension.futureFrom(exception, 1767265200000L));
+        JSONObject series = new JSONObject("{\"_id\":7,\"original_id\":null,\"dtstart\":1767175200000,\"rrule\":\"FREQ=DAILY;COUNT=10\"}");
+        assertFalse(CalendarExtension.detached(series));
+        assertArrayEquals(new long[]{7L, 1767348000000L}, CalendarExtension.futureFrom(series, 1767348000000L));
+        assertArrayEquals(new long[]{7L, 1767175200000L}, CalendarExtension.futureFrom(series, null));
+        assertFalse(CalendarExtension.detached(new JSONObject("{\"_id\":8,\"original_id\":\"\"}")));
+    }
 }

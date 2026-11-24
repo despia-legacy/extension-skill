@@ -171,7 +171,7 @@ public final class CalendarExtension implements NativeExtension {
     }
     /** A provider text column; a NULL column is "" (JSONObject.optString would return the word null). */
     private static String text(JSONObject row, String key) { return row.isNull(key) ? "" : row.optString(key, ""); }
-    private static final String[] SERIES = {"_id", "calendar_id", "title", "description", "eventLocation", "dtstart", "dtend", "duration", "allDay", "eventTimezone", "rrule", "rdate", "exdate", "original_id", "availability", "accessLevel", "_sync_id"};
+    private static final String[] SERIES = {"_id", "calendar_id", "title", "description", "eventLocation", "dtstart", "dtend", "duration", "allDay", "eventTimezone", "rrule", "rdate", "exdate", "original_id", "originalInstanceTime", "availability", "accessLevel", "_sync_id"};
     private JSONObject series(Object id) throws JSONException {
         JSONArray rows = query(item(CalendarContract.Events.CONTENT_URI, id), SERIES, null, null, null, 0, 1, "rows").getJSONArray("rows");
         if (rows.length() == 0) throw new NoSuchElementException();
@@ -187,6 +187,16 @@ public final class CalendarExtension implements NativeExtension {
         java.text.SimpleDateFormat format = new java.text.SimpleDateFormat(allDay ? "yyyyMMdd" : "yyyyMMdd'T'HHmmss'Z'", Locale.ROOT); format.setTimeZone(TimeZone.getTimeZone("UTC"));
         String old = row.isNull("exdate") ? "" : row.optString("exdate", "");
         return (old.isEmpty() ? "" : old + ",") + format.format(new Date(at));
+    }
+    /** An occurrence already detached from its series: an exception row, which Instances (and so the events route)
+     *  returns under its own id. */
+    static boolean detached(JSONObject row) { return !row.isNull("original_id") && !row.optString("original_id", "").isEmpty(); }
+    /** The series a future span acts on, and the occurrence start it acts from. For a detached occurrence that is its
+     *  series from the slot it replaced (originalInstanceTime), as EventKit's futureEvents does for a detached EKEvent;
+     *  otherwise the row itself from occurrence_ms, or from its start. Returns {series id, occurrence start}. */
+    static long[] futureFrom(JSONObject row, Long occurrence) throws JSONException {
+        if (detached(row)) return new long[]{Long.parseLong(String.valueOf(row.get("original_id"))), row.getLong("originalInstanceTime")};
+        return new long[]{row.getLong("_id"), occurrence == null ? row.getLong("dtstart") : occurrence};
     }
     private static boolean recurring(JSONObject row) { return !row.optString("rrule", "").isEmpty() && !row.isNull("rrule") || !row.optString("rdate", "").isEmpty() && !row.isNull("rdate"); }
     /** The occurrence start a span acts from: occurrence_ms (it must be an instance of this event), else the series start. */
@@ -256,9 +266,20 @@ public final class CalendarExtension implements NativeExtension {
         String id = data.optString("id", "");
         if (id.isEmpty()) return saveEvent(data);
         JSONObject row = series(id);
+        if ("future".equals(p.get("span")) && detached(row)) {
+            if (p.containsKey("occurrence_ms")) occurrence(p, row);   // it must be this detached occurrence
+            long[] target = futureFrom(row, null);
+            id = String.valueOf(target[0]); row = series(id);
+            data = new JSONObject(data.toString()).put("id", id);
+            return saveFuture(p, data, row, id, target[1]);
+        }
         if (!recurring(row)) return saveEvent(data);
         long at = occurrence(p, row);
-        if ("future".equals(p.get("span"))) {
+        if ("future".equals(p.get("span"))) return saveFuture(p, data, row, id, at);
+        return saveThis(data, row, id, at);
+    }
+    private ExtResult saveFuture(Map<String,Object> p, JSONObject data, JSONObject row, String id, long at) throws Exception {
+        {
             if (at <= row.getLong("dtstart")) return saveEvent(data);
             // Split: the original series ends before the occurrence; a new series starts there with the changes.
             ArrayList<ContentProviderOperation> operations = new ArrayList<>();
@@ -301,6 +322,8 @@ public final class CalendarExtension implements NativeExtension {
             if (result[first].uri == null) throw new IllegalStateException();
             return ExtResult.ok(new JSONObject().put("id", result[first].uri.getLastPathSegment()).put("saved", true).put("series_id", id).put("split_ms", at));
         }
+    }
+    private ExtResult saveThis(JSONObject data, JSONObject row, String id, long at) throws Exception {
         // "this": one occurrence becomes an exception of the series (the provider copies the series fields).
         if (data.has("recurrence")) throw new IllegalArgumentException("One occurrence cannot carry a recurrence");
         if (!synced(row)) {
@@ -348,14 +371,22 @@ public final class CalendarExtension implements NativeExtension {
     private ExtResult deleteSpan(Map<String,Object> p) throws Exception {
         JSONObject row = series(p.get("id"));
         String id = String.valueOf(row.getLong("_id"));
-        if (!row.isNull("original_id") && !row.optString("original_id", "").isEmpty() && !"future".equals(p.get("span"))) {
-            // An occurrence already detached from its series: cancel it so the series instance does not come back.
-            int changed = resolver.update(item(CalendarContract.Events.CONTENT_URI, id), statusCanceled(), null, null);
-            if (changed == 0) throw new NoSuchElementException();
-            return ExtResult.ok(new JSONObject().put("deleted", true));
+        long at;
+        if (detached(row)) {
+            if (p.containsKey("occurrence_ms")) occurrence(p, row);   // it must be this detached occurrence
+            if (!"future".equals(p.get("span"))) {
+                // Cancel the detached occurrence so the series instance does not come back.
+                int changed = resolver.update(item(CalendarContract.Events.CONTENT_URI, id), statusCanceled(), null, null);
+                if (changed == 0) throw new NoSuchElementException();
+                return ExtResult.ok(new JSONObject().put("deleted", true));
+            }
+            // Future: the series ends before the slot this occurrence replaced, and its later exceptions (this one too) go.
+            long[] target = futureFrom(row, null);
+            id = String.valueOf(target[0]); row = series(id); at = target[1];
+        } else {
+            if (!recurring(row)) return deleted(CalendarContract.Events.CONTENT_URI, id);
+            at = occurrence(p, row);
         }
-        if (!recurring(row)) return deleted(CalendarContract.Events.CONTENT_URI, id);
-        long at = occurrence(p, row);
         ArrayList<ContentProviderOperation> operations = new ArrayList<>();
         if ("future".equals(p.get("span"))) {
             if (at <= row.getLong("dtstart")) {
