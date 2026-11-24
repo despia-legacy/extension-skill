@@ -1,0 +1,30 @@
+---
+name: despia-identity-vault
+description: Store auth tokens and secrets encrypted in a Despia V3 app with identityvault:// (Keychain on iOS, Keystore on Android), with optional biometric or passcode lock, iCloud Keychain sync and Google Block Store backup. Use when a user wants to keep a session or refresh token safely in their Despia app or keep users signed in across reinstalls.
+---
+
+# Despia Identity Vault
+
+Encrypted storage for tokens and secrets: the Keychain on iOS, the Android Keystore on Android. One `identityvault://` command per call; the answer lands on `window.identityVault`.
+
+```javascript
+import despia from 'despia-native'
+
+await despia(`identityvault://set?key=session&value=${encodeURIComponent(token)}`, ['identityVault'])
+const { identityVault: r } = await despia('identityvault://get?key=session', ['identityVault'])
+if (r.ok) useToken(r.value)
+else if (r.error.code === 'not_found') showLogin()
+```
+
+## Rules
+
+- Commands: `set`, `get`, `remove`, `keys`, `clear`. Keys are 1 to 64 characters of `A-Z a-z 0-9 . _ -`. Encode every value with `encodeURIComponent`.
+- `set` options: `sync=device|cloud`, `lock=none|biometric|passcode`, `survivesReinstall=true|false`. Pass `id=` to match answers to calls.
+- A locked value cannot sync or survive a reinstall on Android, and cannot sync on iOS: those combinations answer `platform_limit`. Read the guide's platform table before combining options.
+- Values are at most 64 KB; Android Block Store (`sync=cloud` or `survivesReinstall=true`) keeps at most 16 values of 4094 bytes.
+- Handle `auth_cancelled`, `auth_failed`, `lock_unavailable` and `key_invalidated` (biometrics changed: sign in again).
+- `survivesReinstall=true` on iOS is likely, not guaranteed: always keep a sign-in fallback.
+- Use Storage Vault, not Identity Vault, for non-secret values that should follow the user.
+- Do not claim it works until it ran in the installed rebuilt app on a device.
+
+The full guide is `references/guide.md`, generated from https://setup.despia.com/native-features/identity-vault. Where this file and the guide differ, the guide is right; report it.
