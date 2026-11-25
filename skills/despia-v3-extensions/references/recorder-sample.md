@@ -12,7 +12,7 @@ The page only ever sees a recording id and its state. The audio never crosses th
 
 ## Build prerequisite
 
-Extension files must be compiled into a rebuilt native app. Uploading files does not change an installed binary. Automatic discovery of hosted `/despia/extensions.json` during a normal rebuild is under review and is not yet confirmed in deployed builds. See `troubleshooting.md`.
+Extension files must be compiled into a rebuilt native app. Uploading files does not change an installed binary. Extension builds are not yet open to every app. An app that serves `/despia/extensions.json` today gets a clear build error rather than a build without its extensions. The standard build of an app with no index is unchanged. There is no per-app enrollment switch. See `troubleshooting.md`.
 
 ## Files
 
@@ -20,7 +20,6 @@ Copy every file to the path in its title. Paths are under `public/despia/recorde
 
 Before you build, change these values to your own:
 
-- `client_id` (the id after `/builder/` in your Despia editor URL), `ios_bundle_id` and `android_package` in `public/despia/extensions.json`;
 - the upload host `upload.example.com` in both `hosts` lists in `manifest.json`.
 
 The build policy is part of the trusted build inputs and is not served from your site. Signed-source checks verify the exact files and dependency graph; artifact checks verify the build before signing. You own the behavior and maintenance of your native code.
@@ -45,7 +44,7 @@ The manifest declares everything the recorder needs. The build adds them to your
 - **Foreground service.** `FOREGROUND_SERVICE` and `FOREGROUND_SERVICE_MICROPHONE`, with the service type `microphone`. Google Play asks you to declare this use.
 - **Notifications.** `POST_NOTIFICATIONS`, for the recording notification and its stop action.
 - **Widget.** `StatusWidgetProvider`, an exported app widget receiver.
-- **Libraries.** `androidx.core:core:1.18.0` and `androidx.work:work-runtime:2.11.2`.
+- **Libraries.** `androidx.core:core:1.18.0` and `androidx.work:work-runtime:2.12.0` (2.12.0 of September 23, 2026, the latest stable release on Google Maven, read 24 November 2026). Core stays on 1.18.0: core 1.19.1 of the same day needs compile SDK 37 and Android Gradle Plugin 9.1, and the V3 base app builds with compile SDK 36 and AGP 8.9.1.
 
 ## Using it from your web app
 

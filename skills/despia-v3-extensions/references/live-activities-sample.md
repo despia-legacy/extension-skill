@@ -4,6 +4,8 @@ Documentation: https://setup.despia.com/experiments/samples/live-activities
 
 Source: [Live Activities repository](https://github.com/despia-legacy/live-activities). Read its [LICENSE](https://github.com/despia-legacy/live-activities/blob/main/LICENSE) before using or modifying the extension.
 
+Bundled files: `examples/live-activities/`, copied from the template repository. Copy `manifest.json`, `ios/` and `android/` to `public/despia/<id>/`, and put `extensions.json` in `public/despia/` or merge its name into your own; `liveactivity.policy.json` is build verification metadata and is not served.
+
 This extension starts, updates, ends and lists native activities from your web app. It includes delivery, score and timer templates. On iOS it uses ActivityKit for the Lock Screen and Dynamic Island. On Android it uses ongoing notifications, with Live Updates on Android 16 and later when the system allows promotion.
 
 It is for the Despia V3 runtime. You own and maintain the copied native code. First-party V4 support comes through the new package registry. Read [V3 Extensions](https://setup.despia.com/experiments/v3-extensions) for build verification and rebuild requirements.
@@ -11,7 +13,7 @@ It is for the Despia V3 runtime. You own and maintain the copied native code. Fi
 ## Install
 
 1. Copy the files from the linked extension repository into `public/despia/liveactivity/` in your web app, keeping their `ios/` and `android/` paths.
-2. Add `"liveactivity"` to the `extensions` array in `public/despia/extensions.json`, keeping your app identity and any other extension names.
+2. Add `"liveactivity"` to the `extensions` array in `public/despia/extensions.json`, keeping any other extension names.
 3. Rebuild and install your native app with the extension compiled in. Changing native files requires fresh build verification and a new build.
 
 The manifest adds the `NXLiveActivity` WidgetKit target on iOS. The Android custom module adds its notification permissions, notification service extension and dismiss receiver. Local calls work without OneSignal; server updates require the base app's push integration and your server configuration. Do not put server credentials in your web app.

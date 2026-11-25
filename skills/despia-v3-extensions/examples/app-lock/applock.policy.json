@@ -1,0 +1,6 @@
+{
+  "restricted": [
+    "android.permission.BIND_ACCESSIBILITY_SERVICE",
+    "android.permission.BIND_VPN_SERVICE"
+  ]
+}

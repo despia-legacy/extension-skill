@@ -1,7 +1,7 @@
 import Foundation
 
 /// Shared by the app and the lock-screen widget through the App Group the build provisions
-/// (logical name "nativeext", expanded into NXAppGroups in each bundle's Info.plist).
+/// (logical name "nativeext", expanded into DESPIA_NX_APP_GROUPS in each bundle's Info.plist).
 struct RecorderStatus: Codable, Equatable {
     var recordingId: String?
     var state: String
@@ -12,7 +12,7 @@ struct RecorderStatus: Codable, Equatable {
     static let defaultsKey = "nx.recorder.status"
 
     static func groupIdentifier() -> String? {
-        (Bundle.main.object(forInfoDictionaryKey: "NXAppGroups") as? [String: String])?["nativeext"]
+        (Bundle.main.object(forInfoDictionaryKey: "DESPIA_NX_APP_GROUPS") as? [String: String])?["nativeext"]
     }
 
     static func load() -> RecorderStatus {

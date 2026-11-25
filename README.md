@@ -4,7 +4,7 @@ An Agent Skill that teaches an AI coding agent to write a Despia V3 Extension: n
 
 The skill separates the native contract, installed-build verification and platform behavior. It uses the published Despia JS SDK directly and includes troubleshooting for hosting, manifests, missing answers, permissions and background work.
 
-The skill is self-contained: `skills/despia-v3-extensions/SKILL.md` is the workflow, `references/` holds the manifest, bridge and platform facts plus Background Recorder, Live Activities and Home Widgets references. `examples/recorder/` holds the Background Recorder extension files. The Live Activities and Home Widgets references include their routes, answers and platform limits. Docs: https://setup.despia.com/experiments/v3-extensions
+The skill is self-contained: `skills/despia-v3-extensions/SKILL.md` is the workflow, `references/` holds the manifest, bridge and platform facts plus a reference for each of the nine ready-made extensions: Background Recorder, Live Activities, Home Widgets, Meta Ads, TikTok Ads, Google Ads, Calendar, Alarms and App Lock. `examples/<name>/` holds each extension's files, copied from its template repository. Docs: https://setup.despia.com/experiments/v3-extensions
 
 ## Install
 
@@ -26,7 +26,7 @@ cp -R extension-skill/skills/despia-v3-extensions .claude/skills/
 
 The skill instructions use Apache License 2.0, see [LICENSE](LICENSE).
 
-The Despia-authored extension code in `skills/despia-v3-extensions/examples/recorder/` uses the [Despia V3 Extension Source-Available Commercial License](skills/despia-v3-extensions/examples/recorder/LICENSE), version 1.4. It is proprietary and source available. Anyone with lawful access can inspect, copy, modify, build and run it for noncommercial development, evaluation and testing with a Despia V3 app without buying a paid Despia license. This includes developing an app you intend to release commercially later.
+The Despia-authored extension code in `skills/despia-v3-extensions/examples/<name>/` uses the [Despia V3 Extension Source-Available Commercial License](skills/despia-v3-extensions/examples/recorder/LICENSE), version 1.4. Each example folder keeps its own copy of the license. It is proprietary and source available. Anyone with lawful access can inspect, copy, modify, build and run it for noncommercial development, evaluation and testing with a Despia V3 app without buying a paid Despia license. This includes developing an app you intend to release commercially later.
 
 Production deployment and commercial use require a valid Despia commercial license and project for the particular application. A Solo Pack covers one app on its licensed operating system, iOS or Android. A Hybrid Pack covers one app on both. An existing applicable license includes all Despia V3 extension templates you have lawful access to and any number of your own extensions for that app and operating system. No separate extension purchase or per-extension fee applies. See [Despia's current plans](https://despia.com/).
 

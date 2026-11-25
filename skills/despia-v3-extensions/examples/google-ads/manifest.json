@@ -1,0 +1,162 @@
+{
+  "version": "1.1.0",
+  "bridge": {
+    "routes": [
+      {
+        "name": "configure",
+        "params": {}
+      },
+      {
+        "name": "status",
+        "params": {}
+      },
+      {
+        "name": "consent",
+        "params": {
+          "enabled": {
+            "type": "bool",
+            "required": true
+          },
+          "ad_storage": {
+            "type": "bool"
+          },
+          "ad_user_data": {
+            "type": "bool"
+          },
+          "ad_personalization": {
+            "type": "bool"
+          }
+        }
+      },
+      {
+        "name": "event",
+        "params": {
+          "name": {
+            "type": "string",
+            "max": 40,
+            "required": true
+          },
+          "properties": {
+            "type": "string",
+            "max": 4096
+          }
+        }
+      },
+      {
+        "name": "purchase",
+        "params": {
+          "amount": {
+            "type": "string",
+            "max": 32,
+            "required": true
+          },
+          "currency": {
+            "type": "string",
+            "max": 3,
+            "required": true
+          },
+          "transaction_id": {
+            "type": "string",
+            "max": 128,
+            "required": true
+          },
+          "properties": {
+            "type": "string",
+            "max": 4096
+          }
+        }
+      },
+      {
+        "name": "user",
+        "params": {
+          "id": {
+            "type": "string",
+            "max": 256
+          }
+        }
+      },
+      {
+        "name": "property",
+        "params": {
+          "name": {
+            "type": "string",
+            "max": 24,
+            "required": true
+          },
+          "value": {
+            "type": "string",
+            "max": 36
+          }
+        }
+      },
+      {
+        "name": "conversion_measurement",
+        "params": {
+          "email": {
+            "type": "string",
+            "max": 254
+          },
+          "phone": {
+            "type": "string",
+            "max": 16
+          },
+          "hashed_email": {
+            "type": "string",
+            "max": 64
+          },
+          "hashed_phone": {
+            "type": "string",
+            "max": 64
+          }
+        }
+      },
+      {
+        "name": "reset",
+        "params": {}
+      }
+    ]
+  },
+  "ios": {
+    "packages": [
+      {
+        "name": "firebase-ios-sdk",
+        "remote": {
+          "url": "https://github.com/firebase/firebase-ios-sdk",
+          "revision": "efad2b784dfae43404dc1fcfdf272981b235e71f"
+        },
+        "products": [
+          "FirebaseCore",
+          "FirebaseAnalytics"
+        ]
+      }
+    ],
+    "package_resolved": "ios/Package.resolved",
+    "app": {
+      "entry_type": "GoogleAdsExtension",
+      "sources": [
+        "ios/app/GoogleAdsExtension.swift"
+      ],
+      "lifecycle": [
+        "launch"
+      ],
+      "packages": [
+        "FirebaseCore",
+        "FirebaseAnalytics"
+      ]
+    }
+  },
+  "android": {
+    "entry_class": "despia.ext.googleads.GoogleAdsExtension",
+    "lifecycle": [
+      "application_create"
+    ],
+    "modules": [
+      {
+        "kind": "custom",
+        "name": "googleads",
+        "dir": "android/googleads",
+        "link": "implementation"
+      }
+    ]
+  }
+}

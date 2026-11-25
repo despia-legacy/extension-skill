@@ -1,0 +1,6 @@
+{
+  "restricted": [
+    "android.permission.READ_CALENDAR",
+    "android.permission.WRITE_CALENDAR"
+  ]
+}

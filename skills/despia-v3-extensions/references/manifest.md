@@ -2,7 +2,7 @@
 
 Source: the published V3 Extensions page, https://setup.despia.com/experiments/v3-extensions (Experimental, Despia V3 only).
 
-**Native rebuild required.** Extension files must be compiled into a rebuilt native app. Uploading files does not change an installed binary. Automatic discovery of hosted `/despia/extensions.json` during a normal rebuild is under review and is not yet confirmed in deployed builds. Read `troubleshooting.md` when a route does not answer.
+**Native rebuild required.** Extension files must be compiled into a rebuilt native app. Uploading files does not change an installed binary. Extension builds are not yet open to every app. An app that serves `/despia/extensions.json` today gets a clear build error rather than a build without its extensions. The standard build of an app with no index is unchanged. There is no per-app enrollment switch. Read `troubleshooting.md` when a route does not answer.
 
 V3 Extensions let you add your own native code to a Despia V3 app. You write the Swift (iOS) and Kotlin or Java (Android) files, describe them in a JSON manifest, and serve them from your web app. Despia builds them into your app. Your web code calls them with the Despia JS SDK from a client event:
 
@@ -34,7 +34,7 @@ Use V3 Extensions when you need a native capability that Despia does not offer a
 
 ## Source and build verification
 
-The build verifies source hashes, the complete pinned dependency graph, app identity and the signed build lock. Signing checks also compare the compiled artifact with those inputs. These checks protect build hosts, signing keys and app boundaries. You remain responsible for the behavior and maintenance of your extension code. Apple-managed capabilities, provisioning and store requirements still apply.
+The build verifies source hashes, the complete pinned dependency graph and the signed build lock. Signing checks also compare the compiled artifact with those inputs. These checks protect build hosts, signing keys and app boundaries. You remain responsible for the behavior and maintenance of your extension code. Apple-managed capabilities, provisioning and store requirements still apply.
 
 ## Folder layout in your web app
 
@@ -42,7 +42,7 @@ Put the files in your web app's `public` folder, so they are served from your ap
 
 ```text
 public/despia/
-├── extensions.json              # your app identity and the list of extension folders
+├── extensions.json              # the list of extension folders
 └── recorder/                    # one folder per extension; the folder name is the extension id
     ├── manifest.json            # routes, parameters, outputs, events and native files
     ├── ios/
@@ -51,28 +51,19 @@ public/despia/
         └── ...                  # Java or Kotlin sources and resources
 ```
 
-`extensions.json` names your app and lists the extension folders:
+`extensions.json` lists the extension folders:
 
 ```json public/despia/extensions.json
 {
-  "app": {
-    "client_id": "<your client id>",
-    "ios_bundle_id": "com.example.app",
-    "android_package": "com.example.app"
-  },
-  "extensions": ["recorder"]
+  "extensions": [
+    "recorder"
+  ]
 }
 ```
 
-`extensions.json` holds the app identity and lists the extension folders. The three identity values:
+Despia reads the client id, bundle id and Android package from the build, so the file holds only `extensions`. A legacy `app` block is optional and is accepted only when it matches the build.
 
-- **`client_id`**: your app's id in Despia. Open your app in the Despia editor and copy the id from the address bar: in a URL ending `/builder/<id>`, the part after `/builder/` is your client id.
-- **`ios_bundle_id`**: your app's iOS bundle id, the one Despia builds your iOS app with.
-- **`android_package`**: your app's Android package name, the one Despia builds your Android app with.
-
-The signed build inputs bind the extensions to exactly this app. If a value does not match the app being built, the build stops with an error that names the value (`NX-L013` for `client_id`).
-
-`extensions.json` lists 1 to 8 folders, and each folder name matches `[a-z][a-z0-9]{1,23}`. Any other key is refused, including `manifest_version`. Each extension folder has its own `manifest.json` with a `version` field. A folder listed twice is also refused.
+`extensions` is the only required key. It lists 0 to 8 unique folder names, and each name matches `[a-z][a-z0-9]{1,23}`. An empty list builds without extensions. Any key other than `extensions` and the optional `app` is refused, including `manifest_version`. Each extension folder has its own `manifest.json` with a `version` field. A folder listed twice is also refused.
 
 The folder name is the id in the scheme. `public/despia/recorder/` is called as `extension://recorder/<route>`. File paths in `manifest.json` are relative to the extension's folder and start with `ios/` or `android/`, for example `ios/app/RecorderExtension.swift`. An extension can only name files inside its own folder. A `manifest.json` that also sets `"id"` is refused, because the folder name is the id.
 
@@ -90,7 +81,9 @@ Each route in `manifest.json` declares its parameters and its output. The output
   "params": {
     "upload": {
       "type": "https_url",
-      "hosts": ["upload.example.com"],
+      "hosts": [
+        "upload.example.com"
+      ],
       "required": true
     }
   },
@@ -109,7 +102,11 @@ Events are declared next to the routes, each with its own callback:
 
 ```json
 "events": [
-  { "name": "state", "callback": "onRecorderState", "scope": "document" }
+  {
+    "name": "state",
+    "callback": "onRecorderState",
+    "scope": "document"
+  }
 ]
 ```
 
@@ -137,7 +134,7 @@ JSON parsing is only the first check. Use the runtime's manifest validator, then
 
 | Item | Current contract |
 | --- | --- |
-| Index | Only `app` and `extensions`; 1 to 8 distinct extension folder names |
+| Index | `extensions` (required): 0 to 8 unique folder names; optional legacy `app`, accepted only when it matches the build |
 | Folder manifest | `version`; the folder supplies `id`, so an explicit `id` is rejected |
 | Route names | Lowercase letter followed by lowercase letters, digits or `_`, up to 32 characters |
 | Parameters | Only declared names and type-specific fields; `callback` is reserved for the bridge |
@@ -160,7 +157,7 @@ Both ways are declared in an extension's `manifest.json`.
 
 Declare dependencies and include their required graph files. Build verification covers the complete pinned dependency closure. A package URL or Maven coordinate alone does not describe that graph or prove it was compiled into the app. Manually copying library binaries is not required.
 
-**iOS: a Swift package from GitHub.** List it under `ios.packages` in `manifest.json` with its GitHub URL, the full commit `revision` of the release you want, and the products you use. Then link the product in your app target under `ios.app.packages`. From the Stream calling template:
+**iOS: a Swift package from GitHub.** List it under `ios.packages` in `manifest.json` with its GitHub URL, the full commit `revision` of the release you want, and the products you use. Then link the product in your app target under `ios.app.packages`. Custom module example:
 
 ```json
 {
@@ -183,7 +180,7 @@ Declare dependencies and include their required graph files. Build verification 
 }
 ```
 
-Swift packages come from `github.com` over https. Remote packages require `ios.package_resolved` pointing to the complete pinned `Package.resolved` graph, including transitive packages. The snippet is an excerpt, not a graph file. Missing the reference is refused with `NX-M100`.
+Swift packages come from `github.com` over https. Remote packages require `ios.package_resolved` pointing to the complete pinned `Package.resolved` graph, including transitive packages. The snippet is an excerpt, not a graph file. A build without the reference is refused.
 
 **iOS: a CocoaPod.** The manifest also accepts CocoaPods. Declare exact pod names and versions in `ios.pods`, point `ios.podfile_lock` at the lockfile under your extension's `ios/` folder, and put the installed-tree SHA-256 for every root pod in that lockfile in `ios.pod_trees`:
 
@@ -233,7 +230,28 @@ Files are accepted by type: source and text formats, assets and binaries. Every 
 
 ## What the build owns
 
-You cannot set these. The build sets them for you: bundle id and package name, versions, team and signing, URL types, App Transport Security, purpose strings and permissions your app already sets in Despia (declare them under `requires`), and push and associated-domain entitlements. App Groups are logical names. A group named `nativeext` becomes `group.<bundle id>.nx.nativeext`.
+The build owns bundle id and package name, versions, team and signing, URL types, push and associated-domain entitlements. Existing app permissions and capabilities remain part of the app configuration. App Groups are logical names: `nativeext` becomes `group.<bundle id>.nx.nativeext`. Approved extension purpose text can supply a fallback as described below.
+
+
+### Approved iOS purpose text
+
+Prepared runtime change, pending deployment: an extension may supply a nonempty `NS...UsageDescription` string in `ios.app.info_plist` with `ios.app.custom_keys: true`. For example, add these fields to the existing `ios.app` declaration:
+
+```json
+{
+  "custom_keys": true,
+  "info_plist": {
+    "NSAlarmKitUsageDescription": "Schedule the alarms and timers you create in this app."
+  },
+  "requires": {
+    "usage_descriptions": ["NSAlarmKitUsageDescription"]
+  }
+}
+```
+
+Nonempty purpose text from the app's build configuration wins. An absent key or a blank string uses the approved extension fallback. A required or declared purpose value must be a nonempty string; an invalid non-string app value is not silently replaced. If several extensions supply the same fallback, the first in the signed `extensions.json` order wins.
+
+This uses the existing manifest fields. It does not grant system authorization, enable a disabled native feature or change signing. Signed verification still binds the exact source, manifest and dependency contract; final artifact checks remain exact.
 
 Build errors in your files are reported by their served path, `<extension>/<ios|android>/<your path>:<line>:<column>`, for example `recorder/ios/app/RecorderExtension.swift:42:17`. Build diagnostics have redaction handling. Do not assume every native or WebView runtime log is redacted, and do not log raw commands, credentials or authenticated URLs.
 
