@@ -22,6 +22,8 @@ Needs Stripe on in the Despia V3 app and a new build. Calls are `despia('stripe:
 - Match test and live modes: a `pk_test_` key needs test secrets, and runs Google Pay in its test environment.
 - Never treat the event alone as payment proof; confirm on the server.
 - A missing wallet never fails a call; the sheet shows other methods.
+- Redirect methods (Klarna, Affirm, Afterpay, Amazon Pay) need no page code: on iOS the app sets `<app URL scheme>://stripe-redirect` as the return URL and gives it to Stripe first. Never use `stripe-redirect` as your own deep link. With no URL scheme in the app, those methods are left out.
+- `error: "presenter busy"` (iOS) means another screen was still closing for 2 s and the sheet was not shown and nothing was charged; call again once your own dialog is gone. Do not branch on other error texts.
 - A build without Stripe fires `despia-feature-not-included` with `detail.scheme` `stripe`.
 - Prove it in the installed app on a device; a browser preview has no native sheet.
 
