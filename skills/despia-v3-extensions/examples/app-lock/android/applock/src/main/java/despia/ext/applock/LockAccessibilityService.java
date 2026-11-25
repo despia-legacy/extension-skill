@@ -52,6 +52,8 @@ public final class LockAccessibilityService extends AccessibilityService {
     static void hostResumed() { LockAccessibilityService service = active; if (service != null) service.main.post(() -> { service.foregroundPackage = service.getPackageName(); service.removeOverlay(); }); }
     static void refreshCurrent() { LockAccessibilityService service = active; if (service != null) service.main.post(service::refresh); }
     private void refresh() {
+        try { if (Thresholds.update(this, false)) AppLockExtension.emitCurrent("changed", new JSONObject().put("kind", "threshold_reached")); }
+        catch (Exception failure) { android.util.Log.w("DespiaAppLock", "Usage thresholds could not be read"); }
         if (foregroundPackage == null || !mayShield(foregroundPackage)) { removeOverlay(); return; }
         try {
             JSONObject match = null;
@@ -69,7 +71,7 @@ public final class LockAccessibilityService extends AccessibilityService {
                 if (selected) { match = group; break; }
             }
             if (match == null) removeOverlay(); else if (!match.toString().equals(shieldGroup)) showOverlay(match);
-        } catch (Exception failure) { removeOverlay(); android.util.Log.w("DespiaAppLock", "Foreground shield rules could not be read"); }
+        } catch (Exception failure) { removeOverlay(); android.util.Log.w("DespiaAppLock", "Foreground shield rules could not be read: " + failure.getClass().getSimpleName()); }
     }
     private boolean mayShield(String packageName) {
         if (protectedPackages.contains(packageName)) return false;
@@ -96,7 +98,12 @@ public final class LockAccessibilityService extends AccessibilityService {
         WindowManager.LayoutParams params = new WindowManager.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY, WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, android.graphics.PixelFormat.OPAQUE);
         windows.addView(panel, params); overlay = panel; shieldGroup = group.toString();
     }
-    private static int color(String text, int fallback) { try { return Color.parseColor(text); } catch (IllegalArgumentException invalid) { return fallback; } }
+    /** A shield colour from the group's style, else the fallback. An absent key reads as "", and Color.parseColor("")
+     *  throws StringIndexOutOfBoundsException, not IllegalArgumentException, so both are answered with the fallback. */
+    static int color(String text, int fallback) {
+        if (text == null || text.isEmpty()) return fallback;
+        try { return Color.parseColor(text); } catch (IllegalArgumentException | IndexOutOfBoundsException invalid) { return fallback; }
+    }
     private void removeOverlay() { if (overlay != null) { windows.removeView(overlay); overlay = null; shieldGroup = null; } }
     @Override public void onInterrupt() { removeOverlay(); }
     @Override public void onDestroy() { main.removeCallbacks(ticker); removeOverlay(); if (active == this) active = null; super.onDestroy(); }

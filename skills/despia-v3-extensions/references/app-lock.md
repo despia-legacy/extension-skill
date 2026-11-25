@@ -102,12 +102,13 @@ All routes use `extension://applock/<route>`. The table lists successful payload
 | `apply` | Required `id` | `appLockApply` | `group_id`, `manual_enabled`, effective `active` |
 | `release` | Required `id` | `appLockRelease` | `group_id`, `manual_enabled`, effective `active` |
 | `release_all` | None | `appLockReleaseAll` | `released` |
-| `schedules` | None | `appLockSchedules` | Stored `schedules` |
+| `schedules` | None | `appLockSchedules` | Stored `schedules` with `active` and `threshold_reached` |
 | `schedule_save` | Required JSON string `data` | `appLockScheduleSave` | Stored `schedule` |
 | `schedule_delete` | Required `id` | `appLockScheduleDelete` | `id`, `deleted` |
 | `events` | Optional `clear` Boolean | `appLockEvents` | Retained `events`; clear removes returned entries |
 | `android_apps` | None | `appLockAndroidApps` | Visible launcher `apps`, with package, label and category |
 | `android_accessibility` | Optional `request` Boolean | `appLockAndroidAccessibility` | Current Accessibility/VPN authorization state |
+| `android_usage_access` | Optional `request` Boolean | `appLockAndroidUsageAccess` | Authorization state with `usage_access` |
 | `android_vpn` | Optional `action`: `status`, `start` or `stop`; optional JSON string `data` | `appLockAndroidVpn` | Running/pending state, counters and config |
 
 JSON `data` parameters are limited to 4096 characters. Group IDs are app-owned strings of 1 to 128 Unicode code points. `group_save` requires `name`, generates an ID when omitted and preserves the existing native iOS selection. Optional `domains` are DNS hostnames, without schemes, paths, ports or wildcards. International names use punycode. Android groups use `android.packages` and `android.categories`; `android_apps` reports visible launcher apps, not every installed package.
@@ -120,7 +121,7 @@ A schedule names `group_id` and accepts an optional `id`, `start_hour`, `start_m
 
 Manual activation and schedules form a union. Releasing a manual group does not disable its schedules. Deleting or disabling one schedule removes that schedule only. `release_all` disables this extension's groups and schedules and stops its Android DNS service.
 
-On iOS, `threshold_minutes` can delay activation until the selected activity reaches that threshold inside the window. `includes_past_activity: true` requires iOS 17.4 or later. Android returns `platform_limit` for usage thresholds. Device Activity can reject schedules under its own limits; a successful JavaScript call is not a promise that every interval is accepted by the OS.
+`threshold_minutes` delays activation until the selected activity reaches that threshold inside the window; `includes_past_activity: true` also counts activity in the window from before the schedule was saved. On iOS the threshold uses the group's native selection through a Device Activity event, and `includes_past_activity` requires iOS 17.4 or later. On Android it counts the foreground time of the group's Android apps and categories with UsageStatsManager, checked at least every minute while the Accessibility service or the DNS filter runs, and whenever `schedules` is read. Android keeps usage statistics per app, so a threshold needs at least one Android app or category in the group, else `platform_limit`. Android needs Usage access: `android_usage_access` with `request: true` shows a short disclosure and opens the system Usage access screen, and `authorization` reports `usage_access`. Saving an enabled threshold schedule without it answers `usage_access_required`. `schedules` reports each schedule's `active` and `threshold_reached`; a reached threshold records a `threshold_reached` event on both platforms, and on Android it also sends `changed`. Device Activity can reject schedules under its own limits; a successful JavaScript call is not a promise that every interval is accepted by the OS.
 
 ## iOS controls
 

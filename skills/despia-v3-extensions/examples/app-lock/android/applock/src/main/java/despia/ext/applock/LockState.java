@@ -29,7 +29,7 @@ final class LockState {
         Set<String> scheduled = new HashSet<>(); JSONArray schedules = state.getJSONArray("schedules");
         for (int index = 0; index < schedules.length(); index++) {
             JSONObject schedule = schedules.getJSONObject(index);
-            if (schedule.optBoolean("enabled", true) && active(schedule, now)) scheduled.add(schedule.getString("group_id"));
+            if (schedule.optBoolean("enabled", true) && active(schedule, now) && (!hasThreshold(schedule) || thresholdReached(schedule, now))) scheduled.add(schedule.getString("group_id"));
         }
         List<JSONObject> active = new ArrayList<>(); JSONArray groups = state.getJSONArray("groups");
         for (int index = 0; index < groups.length(); index++) { JSONObject group = groups.getJSONObject(index); if (group.optBoolean("manual_enabled") || scheduled.contains(group.getString("id"))) active.add(group); }
@@ -39,6 +39,19 @@ final class LockState {
         Set<Integer> days = new HashSet<>(); JSONArray weekdays = schedule.getJSONArray("weekdays");
         for (int index = 0; index < weekdays.length(); index++) days.add(weekdays.getInt(index));
         return LockRules.inWindow(now, ZoneId.of(schedule.getString("time_zone")), days, schedule.getInt("start_hour"), schedule.getInt("start_minute"), schedule.getInt("end_hour"), schedule.getInt("end_minute"));
+    }
+    static boolean hasThreshold(JSONObject schedule) { return schedule.has("threshold_minutes") && !schedule.isNull("threshold_minutes"); }
+    /** The start of the schedule's current window in Unix milliseconds, or null outside it. */
+    static Long intervalStart(JSONObject schedule, Instant now) throws JSONException {
+        Set<Integer> days = new HashSet<>(); JSONArray weekdays = schedule.getJSONArray("weekdays");
+        for (int index = 0; index < weekdays.length(); index++) days.add(weekdays.getInt(index));
+        return UsageThreshold.intervalStart(ZoneId.of(schedule.getString("time_zone")), days, schedule.getInt("start_hour"), schedule.getInt("start_minute"), schedule.getInt("end_hour"), schedule.getInt("end_minute"), now);
+    }
+    /** A threshold counts as reached only for the window it was reached in, as the iOS monitor clears it at each
+     *  interval start and end. */
+    static boolean thresholdReached(JSONObject schedule, Instant now) throws JSONException {
+        Long start = intervalStart(schedule, now);
+        return start != null && schedule.has("threshold_interval_ms") && schedule.getLong("threshold_interval_ms") == start;
     }
     static Set<String> domains(JSONObject state) throws JSONException {
         Set<String> domains = new HashSet<>();

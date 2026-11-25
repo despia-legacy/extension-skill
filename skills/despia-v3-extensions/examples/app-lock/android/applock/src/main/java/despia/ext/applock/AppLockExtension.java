@@ -56,13 +56,14 @@ public final class AppLockExtension implements NativeExtension {
         try {
             LockStore store = new LockStore(context.app());
             switch (call.route) {
-                case "capabilities": reply.reply(ExtResult.ok(new JSONObject().put("provider", "accessibility_and_dns").put("apps", true).put("categories", Build.VERSION.SDK_INT >= 26).put("domains", true).put("native_picker", true).put("schedules", true).put("usage_thresholds", false).put("package_suspension", false).put("foreground_shield_only", true).put("udp_dns_only", true).put("doh_blocking", false).put("https_path_blocking", false).put("revocable", true))); return;
+                case "capabilities": reply.reply(ExtResult.ok(new JSONObject().put("provider", "accessibility_and_dns").put("apps", true).put("categories", Build.VERSION.SDK_INT >= 26).put("domains", true).put("native_picker", true).put("schedules", true).put("usage_thresholds", true).put("package_suspension", false).put("foreground_shield_only", true).put("udp_dns_only", true).put("doh_blocking", false).put("https_path_blocking", false).put("revocable", true))); return;
                 case "authorization":
                     if ("child".equals(call.params.get("member"))) { reply.reply(ExtResult.error("platform_limit", "Family Controls child authorization is an iOS operation")); return; }
                     if (Boolean.TRUE.equals(call.params.get("revoke"))) { releaseAll(context.app()); reply.reply(ExtResult.ok(authorization().put("settings_required_to_disable_accessibility", true))); return; }
                     if (Boolean.TRUE.equals(call.params.get("request"))) showAccessibilityDisclosure();
                     reply.reply(ExtResult.ok(authorization())); return;
                 case "android_accessibility": if (Boolean.TRUE.equals(call.params.get("request"))) showAccessibilityDisclosure(); reply.reply(ExtResult.ok(authorization())); return;
+                case "android_usage_access": if (Boolean.TRUE.equals(call.params.get("request"))) showUsageAccessDisclosure(); reply.reply(ExtResult.ok(authorization())); return;
                 case "android_vpn":
                     String action = (String)call.params.getOrDefault("action", "status");
                     if ("stop".equals(action)) { cancelVpnRequest(); LockDnsService.stop(context.app()); }
@@ -96,16 +97,30 @@ public final class AppLockExtension implements NativeExtension {
                     changed(enabled ? "applied" : "released"); reply.reply(ExtResult.ok(new JSONObject().put("group_id", id).put("manual_enabled", enabled).put("active", active))); return;
                 }
                 case "release_all": releaseAll(context.app()); reply.reply(ExtResult.ok(new JSONObject().put("released", true))); return;
-                case "schedules": reply.reply(ExtResult.ok(new JSONObject().put("schedules", store.read().getJSONArray("schedules")))); return;
+                case "schedules": {
+                    if (Thresholds.update(context.app(), true)) changed("threshold_reached");
+                    JSONArray schedules = store.read().getJSONArray("schedules"); Instant now = Instant.now();
+                    for (int index = 0; index < schedules.length(); index++) {
+                        JSONObject schedule = schedules.getJSONObject(index);
+                        schedule.put("active", schedule.optBoolean("enabled", true) && LockState.active(schedule, now)).put("threshold_reached", LockState.hasThreshold(schedule) && LockState.thresholdReached(schedule, now));
+                    }
+                    reply.reply(ExtResult.ok(new JSONObject().put("schedules", schedules))); return;
+                }
                 case "schedule_save": {
                     JSONObject schedule = object(call.params.get("data"));
-                    if (schedule.has("threshold_minutes") && !schedule.isNull("threshold_minutes")) { reply.reply(ExtResult.error("platform_limit", "Android does not expose iOS Screen Time usage threshold monitoring through this sample")); return; }
                     schedule.put("id", schedule.optString("id", UUID.randomUUID().toString())); LockRules.identifier(schedule.getString("id"));
                     if (!schedule.has("enabled")) schedule.put("enabled", true);
                     if (!schedule.has("weekdays")) schedule.put("weekdays", new JSONArray(Arrays.asList(1, 2, 3, 4, 5, 6, 7)));
                     if (!schedule.has("time_zone")) schedule.put("time_zone", ZoneId.systemDefault().getId());
                     LockState.active(schedule, Instant.now());
                     JSONObject group = LockState.group(store.read(), schedule.getString("group_id"));
+                    schedule.remove("threshold_interval_ms"); schedule.remove("active"); schedule.remove("threshold_reached");
+                    if (LockState.hasThreshold(schedule)) {
+                        if (!(schedule.get("threshold_minutes") instanceof Number) || schedule.getDouble("threshold_minutes") != Math.floor(schedule.getDouble("threshold_minutes")) || schedule.getLong("threshold_minutes") < 1) throw new IllegalArgumentException("threshold_minutes must be a positive whole number");
+                        schedule.put("includes_past_activity", schedule.optBoolean("includes_past_activity", false)).put("monitoring_since_ms", System.currentTimeMillis());
+                        if (!Thresholds.countable(group)) { reply.reply(ExtResult.error("platform_limit", "Android keeps usage statistics per app, so a threshold counts the group's Android apps and categories; select at least one")); return; }
+                        if (schedule.getBoolean("enabled") && !Thresholds.granted(context.app())) { reply.reply(ExtResult.error("usage_access_required", "Allow usage access for this app on the system Usage access screen (android_usage_access with request=true)")); return; }
+                    } else { schedule.remove("includes_past_activity"); schedule.remove("monitoring_since_ms"); }
                     if (schedule.getBoolean("enabled")) requireCapabilities(group);
                     store.change(state -> { LockState.replace(state.getJSONArray("schedules"), schedule); LockState.record(state, "schedule_saved", group.getString("id"), schedule.getString("id")); return null; });
                     changed("schedule_saved"); reply.reply(ExtResult.ok(new JSONObject().put("schedule", schedule))); return;
@@ -124,7 +139,7 @@ public final class AppLockExtension implements NativeExtension {
         catch (SecurityException missingPermission) { reply.reply(ExtResult.error("permission_required", missingPermission.getMessage())); }
         catch (Exception failure) { context.log("App Lock operation failed: " + failure.getClass().getSimpleName()); reply.reply(ExtResult.error("app_lock_error", "The native operation could not finish")); }
     }
-    private JSONObject authorization() throws JSONException { return new JSONObject().put("status", accessibilityEnabled() ? "approved" : "not_granted").put("accessibility", accessibilityEnabled()).put("vpn_consent", VpnService.prepare(context.app()) == null).put("vpn_running", LockDnsService.isRunning()).put("pending", vpnRequests.isPending()); }
+    private JSONObject authorization() throws JSONException { return new JSONObject().put("status", accessibilityEnabled() ? "approved" : "not_granted").put("accessibility", accessibilityEnabled()).put("vpn_consent", VpnService.prepare(context.app()) == null).put("vpn_running", LockDnsService.isRunning()).put("usage_access", Thresholds.granted(context.app())).put("pending", vpnRequests.isPending()); }
     private boolean accessibilityEnabled() {
         String enabled = Settings.Secure.getString(context.app().getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
         if (enabled == null) return false; String expected = new ComponentName(context.app(), LockAccessibilityService.class).flattenToString();
@@ -138,6 +153,10 @@ public final class AppLockExtension implements NativeExtension {
     private void showAccessibilityDisclosure() {
         if (activity == null) throw new IllegalStateException("No foreground Activity");
         new AlertDialog.Builder(activity).setTitle("Enable App Lock?").setMessage("App Lock reads foreground app package names and displays a blocking screen for your chosen groups. It does not read screen text. You can stop blocking or disable this service in Accessibility settings at any time. This is a self-control tool, not an accessibility tool or tamper-proof parental control.").setNegativeButton("Cancel", null).setPositiveButton("Open Accessibility settings", (dialog, which) -> activity.startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))).show();
+    }
+    private void showUsageAccessDisclosure() {
+        if (activity == null) throw new IllegalStateException("No foreground Activity");
+        new AlertDialog.Builder(activity).setTitle("Allow usage access?").setMessage("App Lock reads how long you use the apps in your focus groups, to start a group's schedule after the time you set. The data stays on this device. You can turn it off on the Usage access screen at any time.").setNegativeButton("Cancel", null).setPositiveButton("Open Usage access settings", (dialog, which) -> activity.startActivity(Thresholds.settingsIntent())).show();
     }
     private void requestVpn() throws Exception {
         if (activity == null || vpnConsent == null) throw new IllegalStateException("No foreground Activity");

@@ -87,7 +87,7 @@ public final class LockDnsService extends VpnService {
                 try { request = DnsPacket.parse(packet, length); }
                 catch (IllegalArgumentException malformed) { owner.rejected++; continue; }
                 try {
-                    JSONObject state = new LockStore(this).read(); byte[] response;
+                    Thresholds.update(this, false); JSONObject state = new LockStore(this).read(); byte[] response;
                     if (LockRules.matchesDomain(request.hostname, LockState.domains(state))) { response = request.blocked(); owner.blocked++; }
                     else { response = request.response(resolve(owner, request.dns, state.optJSONObject("android_vpn"))); owner.forwarded++; }
                     if (owner.running) output.write(response);
