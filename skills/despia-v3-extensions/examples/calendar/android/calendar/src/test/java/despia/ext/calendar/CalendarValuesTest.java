@@ -1,0 +1,73 @@
+package despia.ext.calendar;
+import org.junit.Test;
+import org.json.JSONObject;
+import java.lang.reflect.*;
+import static org.junit.Assert.*;
+public class CalendarValuesTest {
+    private Object invoke(String name, Class<?> type, Object value) throws Exception {
+        Method method=CalendarExtension.class.getDeclaredMethod(name,type);method.setAccessible(true);return method.invoke(null,value);
+    }
+    private void rejectInteger(Object value) throws Exception {
+        try { invoke("integer",Object.class,value);fail("invalid integer accepted"); }
+        catch(InvocationTargetException expected){assertTrue(expected.getCause() instanceof IllegalArgumentException);}
+    }
+    @Test public void calendarRowsUseSharedFieldsAndKeepNativeMetadata() throws Exception {
+        JSONObject nativeRow = new JSONObject("{\"_id\":7,\"calendar_displayName\":\"Local planning\",\"calendar_access_level\":700,\"account_type\":\"LOCAL\"}");
+        JSONObject calendar = (JSONObject) invoke("normalizedCalendar", JSONObject.class, nativeRow);
+        assertEquals("7", calendar.getString("id"));
+        assertEquals("Local planning", calendar.getString("title"));
+        assertTrue(calendar.getBoolean("writable"));
+        assertEquals("LOCAL", calendar.getJSONObject("android").getString("account_type"));
+        nativeRow.put("calendar_access_level", 500);
+        assertTrue(((JSONObject) invoke("normalizedCalendar", JSONObject.class, nativeRow)).getBoolean("writable"));
+        nativeRow.put("calendar_access_level", 200);
+        assertFalse(((JSONObject) invoke("normalizedCalendar", JSONObject.class, nativeRow)).getBoolean("writable"));
+    }
+    @Test public void exactIntegerValues() throws Exception {
+        assertEquals(1700000000000L,invoke("integer",Object.class,1700000000000L));
+        assertEquals(42L,invoke("integer",Object.class,"42"));
+        for(Object value:new Object[]{1.5,Double.NaN,Double.POSITIVE_INFINITY,"not-an-id",true})rejectInteger(value);
+    }
+    @Test public void recurrenceKeepsPlatformFields() throws Exception {
+        JSONObject rule=new JSONObject("{\"frequency\":2,\"interval\":1,\"days_of_week\":[{\"day\":2,\"week\":-1}],\"end_count\":6}");
+        assertEquals("FREQ=MONTHLY;INTERVAL=1;BYDAY=-1MO;COUNT=6",invoke("recurrence",JSONObject.class,rule));
+        JSONObject until=new JSONObject("{\"frequency\":0,\"interval\":2,\"end_ms\":0}");
+        assertEquals("FREQ=DAILY;INTERVAL=2;UNTIL=19700101T000000Z",invoke("recurrence",JSONObject.class,until));
+    }
+    @Test public void invalidRecurrenceIsRejected() throws Exception {
+        for(String text:new String[]{"{\"frequency\":9,\"interval\":1}","{\"frequency\":0,\"interval\":0}","{\"frequency\":1,\"interval\":1,\"days_of_week\":[{\"day\":8}]}"}) {
+            try { invoke("recurrence",JSONObject.class,new JSONObject(text));fail("invalid recurrence accepted"); }
+            catch(InvocationTargetException expected){assertTrue(expected.getCause() instanceof IllegalArgumentException);}
+        }
+    }
+    @Test public void futureSpanOnDetachedOccurrenceActsOnItsSeries() throws Exception {
+        // The events route returns a modified occurrence under its exception row id; a future span from it acts on the
+        // series from the slot it replaced, not on that one row.
+        JSONObject exception = new JSONObject("{\"_id\":42,\"original_id\":\"7\",\"originalInstanceTime\":1767261600000,\"dtstart\":1767265200000,\"rrule\":null}");
+        assertTrue(CalendarExtension.detached(exception));
+        assertArrayEquals(new long[]{7L, 1767261600000L}, CalendarExtension.futureFrom(exception, 1767265200000L));
+        JSONObject series = new JSONObject("{\"_id\":7,\"original_id\":null,\"dtstart\":1767175200000,\"rrule\":\"FREQ=DAILY;COUNT=10\"}");
+        assertFalse(CalendarExtension.detached(series));
+        assertArrayEquals(new long[]{7L, 1767348000000L}, CalendarExtension.futureFrom(series, 1767348000000L));
+        assertArrayEquals(new long[]{7L, 1767175200000L}, CalendarExtension.futureFrom(series, null));
+        assertFalse(CalendarExtension.detached(new JSONObject("{\"_id\":8,\"original_id\":\"\"}")));
+    }
+
+    @Test public void futureSpanFromEditedOccurrenceStartsFromItsOwnValues() throws Exception {
+        // Saving "future" from an occurrence moved from 09:00Z to 10:00Z: the new series starts at 10:00Z with that
+        // occurrence's length and fields (EventKit futureEvents keeps the edited values), the caller's changes on top.
+        JSONObject moved = new JSONObject("{\"_id\":42,\"original_id\":\"7\",\"originalInstanceTime\":1767430800000,\"dtstart\":1767434400000,\"dtend\":1767438000000,\"duration\":null,\"title\":\"Moved\",\"description\":null,\"eventLocation\":\"Room 2\",\"eventTimezone\":\"UTC\",\"allDay\":0}");
+        JSONObject next = CalendarExtension.futureValues(new JSONObject("{\"id\":\"7\",\"title\":\"Split\"}"), moved, 1767430800000L);
+        assertEquals(1767434400000L, next.getLong("start_ms"));
+        assertEquals(1767438000000L, next.getLong("end_ms"));
+        assertEquals("Split", next.getString("title"));
+        assertEquals("Room 2", next.getString("location"));
+        assertFalse(next.has("notes"));
+        // An occurrence still inside its series starts the new series at its slot with the series length.
+        JSONObject series = new JSONObject("{\"_id\":7,\"original_id\":null,\"dtstart\":1767258000000,\"dtend\":null,\"duration\":\"P3600S\",\"title\":\"Series\",\"description\":null,\"eventLocation\":null,\"eventTimezone\":\"UTC\",\"allDay\":0}");
+        JSONObject inSeries = CalendarExtension.futureValues(new JSONObject("{}"), series, 1767430800000L);
+        assertEquals(1767430800000L, inSeries.getLong("start_ms"));
+        assertEquals(1767434400000L, inSeries.getLong("end_ms"));
+        assertEquals("Series", inSeries.getString("title"));
+    }
+}

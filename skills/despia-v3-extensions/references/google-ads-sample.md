@@ -1,0 +1,119 @@
+# Google Ads extension
+
+Source preview. Runtime changes and hosted extension support are pending deployment. The extension must be compiled into a rebuilt native app. Read `references/troubleshooting.md` before preparing a build.
+
+Source repository: [Google Ads](https://github.com/despia-legacy/google-ads).
+
+Bundled files: `examples/google-ads/`, copied from the template repository. Copy `manifest.json`, `ios/` and `android/` to `public/despia/<id>/`, and put `extensions.json` in `public/despia/` or merge its name into your own; the template ships no policy file.
+
+Send native Firebase Analytics events from a Despia V3 app for use by a linked Google Ads account. This extension is independent of AppsFlyer. It does not display ads or include AdMob. First-party V4 support comes through the new package registry.
+
+## Install
+
+1. Copy `googleads/` to your web project's `public/despia/googleads/`.
+2. Add `googleads` to `public/despia/extensions.json`:
+
+   ```json
+   { "extensions": ["googleads"] }
+   ```
+
+3. Register the iOS and Android apps in the intended Firebase project. Link Firebase Analytics to Google Ads and select eligible conversion events in that account.
+4. Supply the iOS app's matching `GoogleService-Info.plist` through Despia's build configuration. The prepared V3 build copies it even when Firebase push is disabled. The adapter reads it when no default Firebase app exists.
+5. On Android, the app's generated Firebase resources take priority. If the app has none, fill the empty values in `googleads/android/googleads/src/main/res/values/google_ads.xml`: `google_app_id`, `google_api_key`, `project_id` and `gcm_defaultSenderId`. Use the Firebase Android app's configuration, never a service account credential or server key.
+6. Verify the extension build inputs and rebuild the native app. Install the resulting native app. A website update or browser preview does not install native code.
+
+The iOS manifest declares the Firebase Swift package `firebase-ios-sdk` at `13.2.0` (revision `efad2b784dfae43404dc1fcfdf272981b235e71f`; the latest release, 13 November 2026, read 24 November 2026 on the firebase-ios-sdk releases page) with the products `FirebaseCore` and `FirebaseAnalytics`, and an `ios/Package.resolved` that pins the package's complete dependency graph. Android uses Firebase BOM `35.2.0` (the latest release, 11 November 2026, read 24 November 2026 on Google Maven) and `firebase-analytics`. The extension adds no Messaging dependency and does not enable push.
+
+The bridge can be called from any web app that supports custom JavaScript and serves the extension files at their exact HTTPS paths. See [V3 Extensions](https://setup.despia.com/experiments/v3-extensions) for source verification and native rebuild requirements.
+
+## Configure and consent
+
+`configure` reuses the default Firebase app, or creates it from the app's supplied Firebase configuration. It preserves an existing default app. A conflicting Google app ID returns `configuration_conflict`. The adapter does not create a second named app or change collection and consent settings during configuration.
+
+Adapter event routes start disabled each process launch. Firebase itself may already collect automatic events or have been enabled by another integration. To disable Firebase collection from startup, set `FIREBASE_ANALYTICS_COLLECTION_ENABLED` to `false` in the iOS app's Info.plist, and `firebase_analytics_collection_enabled` Boolean metadata to `false` in the Android application manifest. Coordinate these app-wide settings with existing Firebase code.
+
+`consent` changes the shared Firebase Analytics collection setting and all four Firebase consent types. Required `enabled` controls adapter event routes and Analytics storage. Optional `ad_storage`, `ad_user_data` and `ad_personalization` default to `false`. Firebase persists its settings; the adapter's own enabled state resets at process launch. These operations affect other integrations using the same default Analytics instance.
+
+ATT permission is separate. The extension does not request ATT or treat Firebase consent as ATT permission. The iOS dependency closure includes advertising identifier support. Configure the app's privacy disclosures, ATT flow and required network settings separately.
+
+## Calls
+
+Install the SDK with `npm install despia-native`. Import `despia` from `despia-native` and watch the exact declared output variable. Run this from a client event after your consent flow has an answer:
+
+```javascript
+import despia from 'despia-native';
+
+async function reportLead(hasAnalyticsConsent) {
+  const configuredReply = await despia('extension://googleads/configure', ['googleadsConfigureResult']);
+  const configured = configuredReply.googleadsConfigureResult;
+  if (configured === undefined) { console.error('No native reply within 30 seconds'); return; }
+  if (!configured.ok) { console.error(configured.code, configured.error); return; }
+  const consentReply = await despia('extension://googleads/consent?enabled=' + String(hasAnalyticsConsent)
+    + '&ad_storage=false&ad_user_data=false&ad_personalization=false', ['googleadsConsentResult']);
+  const consent = consentReply.googleadsConsentResult;
+  if (consent === undefined) { console.error('No native reply within 30 seconds'); return; }
+  if (!consent.ok) { console.error(consent.code, consent.error); return; }
+  if (!hasAnalyticsConsent) return;
+  const reply = await despia('extension://googleads/event?name=generate_lead&properties='
+    + encodeURIComponent(JSON.stringify({currency: 'USD', value: 12.5})), ['googleadsEventResult']);
+  const answer = reply.googleadsEventResult;
+  if (answer === undefined) { console.error('No native reply within 30 seconds'); return; }
+  if (!answer.ok) { console.error(answer.code, answer.error); return; }
+  return answer.data;
+}
+```
+
+| Route | Parameters | Answer variable | Successful payload |
+| --- | --- | --- | --- |
+| `status` | None | `googleadsStatusResult` | `configured`, adapter `enabled`, `sdk` |
+| `configure` | None | `googleadsConfigureResult` | `configured: true`, adapter `enabled` |
+| `consent` | Required `enabled` Boolean; optional `ad_storage`, `ad_user_data`, `ad_personalization` Booleans | `googleadsConsentResult` | `enabled` |
+| `event` | Required `name`; optional JSON string `properties` | `googleadsEventResult` | `accepted: true` |
+| `purchase` | Required `amount`, uppercase three-letter `currency`, `transaction_id`; optional JSON string `properties` | `googleadsPurchaseResult` | `accepted: true` |
+| `user` | Optional `id`; omit to clear | `googleadsUserResult` | `accepted: true` |
+| `property` | Required `name`; optional `value`; omit to clear | `googleadsPropertyResult` | `accepted: true` |
+| `conversion_measurement` | Exactly one of `email`, `phone` (E.164, such as `+14155550123`), `hashed_email` or `hashed_phone` (SHA-256 of the normalized value, 64 hex characters) | `googleadsConversionMeasurementResult` | `accepted: true` (iOS) |
+| `reset` | None | `googleadsResetResult` | `accepted: true` |
+
+Results use the V3 bridge envelope. `status.sdk` is `13.2.0` on iOS and `BOM35.2.0` on Android. `accepted` means the call was handed to the SDK. It does not confirm event ingestion, attribution or a recorded conversion.
+
+`properties` accepts a JSON object of strings and finite numbers, plus Firebase's `items` array of objects containing strings and finite numbers. Booleans, nulls and other nested objects are rejected. The encoded JSON string is limited to 4096 characters. Event names have a 40-character bridge limit, user IDs 256, property names 24 and property values 36. Firebase applies its own event and parameter rules as well.
+
+`purchase` submits Firebase's `purchase` event. Explicit `amount`, `currency` and `transaction_id` override `value`, `currency` and `transaction_id` in `properties`. The amount must be finite; the transaction ID has a 128-character bridge limit.
+
+`conversion_measurement` starts Google Ads on-device conversion measurement with Firebase's `Analytics.initiateOnDeviceConversionMeasurement`, matching the person's sign-in email or phone on the device; the identifier does not leave the device in identifiable form. It needs `consent` with `enabled=true` first, and the app must be linked to Google Ads. Call it when the person signs in, and again after each app update, as Firebase recommends. Normalize before hashing as Firebase's tutorial describes. On Android it answers `platform_limit`: Google offers on-device conversion measurement for iOS App campaigns only ([Google Ads Help](https://support.google.com/google-ads/answer/12119136), read 24 November 2026).
+
+Clearing a user ID or property and resetting Analytics data remain available after adapter collection is disabled. `reset` affects the shared Analytics instance. It does not delete historical server records or change consent.
+
+Errors include `not_configured`, `configuration_conflict`, `consent_required` and `bad_request`, and `platform_limit` for `conversion_measurement` on Android. Android can also return `sdk_error` when Firebase cannot use the app configuration.
+
+## Platform limits
+
+Both platforms require Firebase configuration for the distributed app's own bundle ID or package. Android's module requires API 24 or later and compile SDK 36. On iOS the V3 base app links the same `firebase-ios-sdk` 13.2.0 package for push, so the extension uses that version and adds only the `FirebaseCore` and `FirebaseAnalytics` products. It needs a V3 runtime that ships Firebase 13 as a Swift package. On-device conversion measurement is iOS only (see `conversion_measurement`).
+
+Google Ads linkage, event eligibility, consent and campaign attribution depend on the app's account configuration. A successful bridge answer is not evidence of a conversion.
+
+See [Firebase app configuration](https://firebase.google.com/docs/projects/multiprojects), [iOS collection controls](https://firebase.google.com/docs/analytics/ios/configure-data-collection), [Android collection controls](https://firebase.google.com/docs/analytics/android/configure-data-collection) and [Google Ads integration](https://support.google.com/firebase/answer/6383833?hl=en).
+
+## License
+
+[Despia V3 Extension Source-Available Commercial License](https://github.com/despia-legacy/google-ads/blob/main/LICENSE), version 1.4.
+This template is proprietary and source available.
+
+You may inspect, fork, customize, build and run it for noncommercial development,
+evaluation and testing without a paid Despia license, including work on an app
+you plan to release commercially later.
+
+Production or commercial use requires a valid Despia project and an applicable
+Despia license for that application and operating system. A Solo Pack covers
+its licensed OS, iOS or Android. A Hybrid Pack covers both. Your applicable
+license includes all provided V3 templates you have lawful access to and any
+number of your own extensions, with no separate extension purchase or
+per-extension fee.
+
+Keep the license and applicable notices. Third-party material keeps its own
+terms. Experimental V3 extensions do not include a commitment to maintenance
+or a V4 port. See [LICENSE](https://github.com/despia-legacy/google-ads/blob/main/LICENSE) for the full terms and [Despia](https://despia.com)
+for licensing.
+
+See the [extension skill](https://github.com/despia-legacy/extension-skill).

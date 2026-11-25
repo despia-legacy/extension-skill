@@ -34,6 +34,7 @@ final class RecorderExtension: NSObject, NativeExtension {
 - `didLaunch(_:)` runs once at every launch, before any web view exists, also when iOS launches the app in the background.
 - After any `await` in `handle`, check `call.isActive` before you start something new. Once the route's `timeout_ms` has passed, the page already has its `timeout` answer.
 - Do not mark `handle` `nonisolated` or `@concurrent`. Do background work explicitly and return to the main actor before you touch extension state.
+- Your app sources compile into the same module as the app, where the app's own types win over imported ones. When the app declares a type with the same name as a framework type, write the framework type with its module: the app has its own `ToolbarItem`, so use `SwiftUI.ToolbarItem(placement:)`. The build refuses a bare use and names the file and line.
 
 `NativeExtContext` gives you `dataDirectory`, `appGroupIdentifier(_:)`, `appGroupURL(_:)`, `backgroundSessionIdentifier(_:)`, `isApprovedURL(_:route:param:)`, `onExpiration(of:_:)`, `emit(_:_:)` and `log(_:)`. Only these types are supported API.
 

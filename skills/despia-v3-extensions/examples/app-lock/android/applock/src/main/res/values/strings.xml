@@ -1,0 +1,4 @@
+<resources>
+    <string name="despia_nx_applock_name">App Lock</string>
+    <string name="despia_nx_applock_description">Reads foreground app names and shows a focus screen for the apps you select. It does not read screen text. You can stop all blocking or disable this service at any time.</string>
+</resources>
