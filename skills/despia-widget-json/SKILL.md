@@ -25,6 +25,7 @@ Built into the Despia V3 app; nothing to install (iOS needs the Home Widgets wid
 - Send state, not documents, for updates; keep an activity's attributes and state under 4 KB.
 - A `list` needs `max`; single-tap families use the layout's `widgetUrl`, not a `link`.
 - Give `image.symbol` both `ios` and `android` names, or use `svg`.
+- Remote pictures must be `https://`; the app downloads them (and rasterises `svg`) when a document, state or push arrives, scales them to 1200 px and skips anything over 16 MB. A summary `icon` or `largeIcon` takes the same `symbol`, `src`, `svg` or `asset` forms.
 - Encode every value with `encodeURIComponent`; JSON values are JSON text.
 - A `stale` or `duplicate` answer means an older update; pass a higher `seq`.
 - Prove it in the installed app on a device; a browser preview has no widget.
