@@ -23,7 +23,7 @@ Two switches from `despia-native`, both off until the page calls them, both kept
 - If the page does not call `ready` within the limit while the app is in front, the app reloads the page under the cover and lifts it when the new page loads (`event: 'reloaded'`). It never lifts the cover over the old page.
 - Answers and events set `window.despiaScreenGuard` / `window.despiaScreenshotGuard`, then call `window.onDespiaScreenGuard` / `window.onDespiaScreenshotGuard`. Events: `state`, `covered`, `returned`, `uncovered`, `reloaded`. Refusals: `unknown_command`, `bad_request`.
 - Events are best effort (the page may be suspended); the cover does not depend on them. Never hide private content yourself from `focusout`.
-- The page's `screenshotguard://` call wins over the editor's screenshot switch; the switch only sets the state at launch.
+- Screenshot protection is call-only: nothing is protected at launch. The editor's screenshot switch only configures (reported as `configured`); call `screenshotguard://on` from `<head>`.
 - Platforms: iOS shows the splash in the switcher and blocks captures best effort (no public API). Android 13+ shows a plain card in the splash colour and allows screenshots. Android 7 to 12L has no Recents-only API, so the guard also blocks screenshots there.
 - Only the top-level page can call them; iframe, popup and in-app-browser calls are ignored.
 
