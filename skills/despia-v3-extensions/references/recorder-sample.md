@@ -1,6 +1,11 @@
-# Background Recorder extension notes
+# Background Recorder
 
-Documentation: https://setup.despia.com/experiments/samples/recorder . The files are in examples/recorder/ (copy each to public/despia/recorder/<path>, except extensions.json which goes in public/despia/, and recorder.policy.json which belongs to the trusted build inputs and is not served).
+Generated from the docs pages below; do not edit by hand. Change the page and regenerate.
+
+
+## Background Recorder
+
+Page: https://setup.despia.com/extensions/catalog/recorder
 
 Source: [Background Recorder repository](https://github.com/despia-legacy/recorder). Read its [LICENSE](https://github.com/despia-legacy/recorder/blob/main/LICENSE) before using or modifying the extension.
 
@@ -8,24 +13,23 @@ This extension records audio from the microphone, keeps recording when the app g
 
 The page only ever sees a recording id and its state. The audio never crosses the bridge.
 
-**Experimental. V3 only.** You own and maintain this ready-made extension once it is in your app. First-party V4 support comes through the new package registry. Despia does not support customised code. Read [V3 Extensions](/experiments/v3-extensions) first.
+---
 
-## Build prerequisite
+```bash
+npx despia-extensions add recorder --set uploadHosts=uploads.example.com
+```
 
-Extension files must be compiled into a rebuilt native app. Uploading files does not change an installed binary. Automatic discovery of hosted `/despia/extensions.json` during a normal rebuild is under review and is not yet confirmed in deployed builds. See `troubleshooting.md`.
+> **Warning:** Uploading files does not change an installed app. Rebuild the native app after you install, update or remove this extension. You own and maintain the extension's code once it is in your app.
 
-## Files
+### Install
 
-Copy every file to the path in its title. Paths are under `public/despia/recorder/` in your web app, except `extensions.json`, which goes in `public/despia/`.
+Run the command above in your web project, commit, deploy, then rebuild the app. See [Install with the CLI](https://setup.despia.com/extensions/install).
 
-Before you build, change these values to your own:
+| Setting | Platform | What it is |
+| --- | --- | --- |
+| `uploadHosts` | both | Upload hosts (list) |
 
-- `client_id` (the id after `/builder/` in your Despia editor URL), `ios_bundle_id` and `android_package` in `public/despia/extensions.json`;
-- the upload host `upload.example.com` in both `hosts` lists in `manifest.json`.
-
-The build policy is part of the trusted build inputs and is not served from your site. Signed-source checks verify the exact files and dependency graph; artifact checks verify the build before signing. You own the behavior and maintenance of your native code.
-
-## Recording and upload boundaries
+### Recording and upload boundaries
 
 Recorder contains its own audio-file uploader. It sends raw `PUT` requests with `Content-Type: audio/mp4` and `X-Recording-Id`; it does not send multipart form data or arbitrary JSON metadata. Your endpoint must implement that contract. An `uploading` state is not server-confirmed completion.
 
@@ -33,21 +37,31 @@ On iOS the uploader uses an in-process ephemeral URLSession and opportunistic ba
 
 A general file-picker or multipart background-upload extension is a separate capability. Recorder's documented tests do not prove that separate capability or a combined Recorder-to-uploader workflow. Verify the actual pairing, backend protocol and termination/recovery cases before promising them.
 
-## Permissions and capabilities
+### Permissions and capabilities
 
 The manifest declares everything the recorder needs. The build adds them to your app.
 
+
+**iOS**
+
 - **Microphone.** `NSMicrophoneUsageDescription`, declared under `requires.usage_descriptions`. Set the purpose text in Despia.
 - **Background modes.** `audio` (keep recording in the background) and `processing` (finish uploads in a background processing task named `upload`).
-- **App Group.** The logical group `nativeext`, shared by the app and the `RecorderStatusWidget` target. It becomes `group.<bundle id>.nx.nativeext`. Register it in the Apple Developer portal and add it to both bundle IDs, as for [Home Widgets](/native-features/home-widgets).
+- **App Group.** The logical group `nativeext`, shared by the app and the `RecorderStatusWidget` target. It becomes `group.<bundle id>.nx.nativeext`. Register it in the Apple Developer portal and add it to both bundle IDs, as for [Home Widgets](https://setup.despia.com/native-features/home-widgets).
 - **Widget.** `RecorderStatusWidget`, a WidgetKit target with a deployment target of iOS 16.6.
+
+**Android**
+
 - **Microphone.** `android.permission.RECORD_AUDIO`, declared under `requires.permissions`. Turn on the microphone permission for your app in Despia. The recorder does not ask for it on Android: it must be granted before `start`, otherwise `start` answers `permission_denied`. See [Asking for the microphone on Android](#asking-for-the-microphone-on-android).
 - **Foreground service.** `FOREGROUND_SERVICE` and `FOREGROUND_SERVICE_MICROPHONE`, with the service type `microphone`. Google Play asks you to declare this use.
 - **Notifications.** `POST_NOTIFICATIONS`, for the recording notification and its stop action.
 - **Widget.** `StatusWidgetProvider`, an exported app widget receiver.
-- **Libraries.** `androidx.core:core:1.18.0` and `androidx.work:work-runtime:2.11.2`.
+- **Libraries.** `androidx.core:core:1.18.0` and `androidx.work:work-runtime:2.12.0` (2.12.0 of September 23, 2026, the latest stable release on Google Maven, read 24 November 2026). Core stays on 1.18.0: core 1.19.1 of the same day needs compile SDK 37 and Android Gradle Plugin 9.1, and the V3 base app builds with compile SDK 36 and AGP 8.9.1.
 
-## Using it from your web app
+
+
+---
+
+### Using it from your web app
 
 The upload URL receives an HTTP `PUT`, with `Content-Type: audio/mp4` and an `X-Recording-Id` header. Its host must be in the route's approved `hosts` list.
 
@@ -77,9 +91,9 @@ async function stopRecording(id) {
 }
 ```
 
-Register `onRecorderState` as described in `references/routes-and-answers.md` before starting if you need live changes. Read `status` after a page reload; event delivery is not durable.
+Register `onRecorderState` as described in [Calling a route](https://setup.despia.com/extensions/reference/manifest#calling-a-route-with-the-despia-js-sdk) before starting if you need live changes. Read `status` after a page reload; event delivery is not durable.
 
-### Asking for the microphone on Android
+#### Asking for the microphone on Android
 
 On iOS, `start` shows the microphone prompt itself. On Android it does not. Ask for the microphone from the page first with the standard web API. Despia's Android app turns a web microphone request into the system `RECORD_AUDIO` prompt, when the microphone permission is on for your app:
 
@@ -99,7 +113,7 @@ async function startWithMicrophone(uploadUrl) {
 
 If the user denies it, `getUserMedia` throws and `start` answers `permission_denied`.
 
-### Routes
+#### Routes
 
 | Route     | Parameters                 | Answer variable and callback          | What it does                                                                                       |
 | --------- | -------------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------- |
@@ -111,7 +125,7 @@ If the user denies it, `getUserMedia` throws and `start` answers `permission_den
 
 The `state` event calls the declared `onRecorderState(data)` handler on changes.
 
-### States
+#### States
 
 | State         | Meaning                                                                                   |
 | ------------- | ----------------------------------------------------------------------------------------- |
@@ -127,9 +141,9 @@ The `state` event calls the declared `onRecorderState(data)` handler on changes.
 
 Answers and events carry `recordingId`, `state`, `durationMs` and `bytes`, plus `httpStatus` after an upload attempt and `reason` when the state is `failed`. While the recorder could not save its index, they also carry `durable: false` and `storage`.
 
-### Error codes
+#### Error codes
 
-Besides the [standard codes](/experiments/v3-extensions#error-codes), the recorder answers:
+Besides the [standard codes](https://setup.despia.com/extensions/reference/manifest#error-codes), the recorder answers:
 
 | Code                  | When                                                                                       |
 | --------------------- | ------------------------------------------------------------------------------------------ |
@@ -142,7 +156,44 @@ Besides the [standard codes](/experiments/v3-extensions#error-codes), the record
 | `index_recovered`     | The index was unreadable and was replaced, so an older recording may be missing            |
 | `discard_failed`      | The file could not be deleted yet. It stays `discarding` and is deleted on the next `discard` or launch |
 
-## Platform limits
+---
+
+### Platform limits
 
 - **iOS.** Recording must start while the app is in the foreground. It continues in the background while the audio session stays active. A force-quit ends it. Uploads run while the app runs, in the limited background time iOS may give, and in a background processing task if iOS grants one. iOS guarantees neither. An upload that is cut off starts again from the beginning the next time the app runs.
 - **Android.** Android 14 and later only start a microphone foreground service while the app is visible, so call `start` from a page the user is looking at. Lock Screen widgets depend on the device; the foreground service notification is always shown. Uploads run through WorkManager.
+
+### Reference
+
+Version 1.0.0. Call a route as `extension://recorder/<route>`. The answer is written to the route's variable on `window`, then its callback is called with it.
+
+#### Settings
+
+| Setting | Type | Required | Platforms | Environment variable |
+| --- | --- | --- | --- | --- |
+| `uploadHosts` | string_list (public) | no | ios, android | `DESPIA_EXT_RECORDER_UPLOAD_HOSTS` |
+
+#### Routes
+
+| Route | Parameters | Answer variable | Callback |
+| --- | --- | --- | --- |
+| `start` | `upload`: https_url, hosts `upload.example.com`, **required** | `recorderStart` | `onRecorderStart` |
+| `stop` | `id`: string, max 64, **required** | `recorderStop` | `onRecorderStop` |
+| `status` | `id`: string, max 64 | `recorderStatus` | `onRecorderStatus` |
+| `discard` | `id`: string, max 64, **required** | `recorderDiscard` | `onRecorderDiscard` |
+| `upload` | `id`: string, max 64, **required**<br/>`upload`: https_url, hosts `upload.example.com`, **required** | `recorderUpload` | `onRecorderUpload` |
+
+#### Events
+
+| Event | Callback | Scope |
+| --- | --- | --- |
+| `state` | `onRecorderState` | document |
+
+#### Native requirements
+
+| Platform | What the build adds |
+| --- | --- |
+| iOS | Frameworks: `AVFAudio`, `WidgetKit` |
+| iOS | Usage descriptions: `NSMicrophoneUsageDescription` |
+| Android | Permissions: `RECORD_AUDIO` |
+| Android | Module `recorder` dependencies: `androidx.core:core:1.18.0`, `androidx.work:work-runtime:2.11.2` |

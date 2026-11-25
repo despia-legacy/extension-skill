@@ -1,48 +1,19 @@
-# Layout, manifest and native work
+# Manifest, routes, answers, events and the descriptor
 
-Source: the published V3 Extensions page, https://setup.despia.com/experiments/v3-extensions (Experimental, Despia V3 only).
+Generated from the docs pages below; do not edit by hand. Change the page and regenerate.
 
-**Native rebuild required.** Extension files must be compiled into a rebuilt native app. Uploading files does not change an installed binary. Automatic discovery of hosted `/despia/extensions.json` during a normal rebuild is under review and is not yet confirmed in deployed builds. Read `troubleshooting.md` when a route does not answer.
 
-V3 Extensions let you add your own native code to a Despia V3 app. You write the Swift (iOS) and Kotlin or Java (Android) files, describe them in a JSON manifest, and serve them from your web app. Despia builds them into your app. Your web code calls them with the Despia JS SDK from a client event:
+## Manifest reference
 
-```javascript
-import despia from 'despia-native';
+Page: https://setup.despia.com/extensions/reference/manifest
 
-// Run from a browser click handler or client lifecycle hook.
-async function readRecorderStatus() {
-  const reply = await despia('extension://recorder/status', ['recorderStatus']);
-  const answer = reply.recorderStatus;
-  if (answer === undefined) { console.error('No native reply within 30 seconds'); return; }
-  if (!answer.ok) console.error(answer.code, answer.error);
-  return answer;
-}
-```
+### Folder layout
 
-Use V3 Extensions when you need a native capability that Despia does not offer as a feature yet, or when you need full control over the native code. The [ready-made extensions](/experiments/samples/recorder) include source you can copy and customize.
-
-## How it works
-
-- **The manifest declares the extension.**
-    Each extension has a `manifest.json`. Its folder supplies the extension id. The manifest declares its routes, the typed parameters of each route, the answer variable and callback of each route, its events, and the native files for each platform.
-- **Despia builds it into your app.**
-    Your files are served from your app's own HTTPS origin. The extension build process fetches and verifies the index, source files and pinned dependencies, then compiles them into a new native build. Signed inputs bind the build to your app. Changed source needs fresh build verification and a native rebuild; it cannot be applied over-the-air.
-- **Your web app calls a route.**
-    The page sends `extension://<id>/<route>?<params>`. The runtime first checks the call: the extension and route exist, only declared parameters are present, and each value has the declared type. Only then does it call your native handler.
-- **The answer comes back once.**
-    Every admitted call gets one terminal answer in its calling document while that document remains eligible to receive it. Missing runtimes and rejected callers do not provide that guarantee. The runtime sets the route's answer variable on `window` and then calls the route's callback with it.
-
-## Source and build verification
-
-The build verifies source hashes, the complete pinned dependency graph, app identity and the signed build lock. Signing checks also compare the compiled artifact with those inputs. These checks protect build hosts, signing keys and app boundaries. You remain responsible for the behavior and maintenance of your extension code. Apple-managed capabilities, provisioning and store requirements still apply.
-
-## Folder layout in your web app
-
-Put the files in your web app's `public` folder, so they are served from your app's own origin:
+The CLI writes this for you (`static/` instead of `public/` in SvelteKit). It is the same if you copy an extension by hand. The files are served from your app's own origin:
 
 ```text
 public/despia/
-├── extensions.json              # your app identity and the list of extension folders
+├── extensions.json              # the list of extension folders
 └── recorder/                    # one folder per extension; the folder name is the extension id
     ├── manifest.json            # routes, parameters, outputs, events and native files
     ├── ios/
@@ -51,36 +22,33 @@ public/despia/
         └── ...                  # Java or Kotlin sources and resources
 ```
 
-`extensions.json` names your app and lists the extension folders:
+`extensions.json` lists the extension folders:
 
 ```json public/despia/extensions.json
 {
-  "app": {
-    "client_id": "<your client id>",
-    "ios_bundle_id": "com.example.app",
-    "android_package": "com.example.app"
-  },
-  "extensions": ["recorder"]
+  "extensions": [
+    "recorder"
+  ]
 }
 ```
 
-`extensions.json` holds the app identity and lists the extension folders. The three identity values:
+Despia reads the client id, bundle id and Android package from the build, so the file holds only `extensions`. A legacy `app` block is optional and is accepted only when it matches the build.
 
-- **`client_id`**: your app's id in Despia. Open your app in the Despia editor and copy the id from the address bar: in a URL ending `/builder/<id>`, the part after `/builder/` is your client id.
-- **`ios_bundle_id`**: your app's iOS bundle id, the one Despia builds your iOS app with.
-- **`android_package`**: your app's Android package name, the one Despia builds your Android app with.
-
-The signed build inputs bind the extensions to exactly this app. If a value does not match the app being built, the build stops with an error that names the value (`NX-L013` for `client_id`).
-
-`extensions.json` lists 1 to 8 folders, and each folder name matches `[a-z][a-z0-9]{1,23}`. Any other key is refused, including `manifest_version`. Each extension folder has its own `manifest.json` with a `version` field. A folder listed twice is also refused.
+`extensions` is the only required key. It lists 0 to 8 unique folder names, and each name matches `[a-z][a-z0-9]{1,23}`. An empty list builds without extensions. Any key other than `extensions` and the optional `app` is refused, including `manifest_version`. Each folder has its own `manifest.json` with a `version` field. A folder listed twice is also refused.
 
 The folder name is the id in the scheme. `public/despia/recorder/` is called as `extension://recorder/<route>`. File paths in `manifest.json` are relative to the extension's folder and start with `ios/` or `android/`, for example `ios/app/RecorderExtension.swift`. An extension can only name files inside its own folder. A `manifest.json` that also sets `"id"` is refused, because the folder name is the id.
 
-To add an extension to your app, copy its folder under `public/despia/` and add its name to `extensions.json`. Build verification covers `extensions.json`, every `manifest.json` and each referenced file. A change to any of them needs a fresh verified snapshot and native rebuild.
+To add an extension by hand, copy its folder under `public/despia/` and add its name to `extensions.json`. Build verification covers `extensions.json`, every `manifest.json` and each referenced file. A change to any of them needs a fresh verified snapshot and native rebuild.
 
-  Calls are accepted only from the top-level page of your app's own HTTPS origin, or from origins you list in `bridge.allowed_origins`. Iframes, other origins, popups and page sheets get no answer.
+> **Note:** Calls are accepted only from the top-level page of your app's own HTTPS origin, or from origins you list in `bridge.allowed_origins`. Iframes, other origins, popups and page sheets get no answer.
 
-## Declaring routes, outputs and events
+- The served folder holds only the files the manifests name. The build refuses a file no manifest names, hidden files and unknown file types.
+- Serve these paths before your single-page-app fallback. A `200` that returns your HTML is not a JSON file. `npx despia-extensions doctor --hosted <url>` checks it.
+- When a manifest names a directory (an Android custom module `dir`, an iOS package or vendor binary `path`), the CLI also writes `public/despia/files.json`, the list of every file in those directories with its hash and size. The build copies those directories from that list. Deploy it with the rest of `public/despia/`.
+
+---
+
+### Declaring routes, outputs and events
 
 Each route in `manifest.json` declares its parameters and its output. The output names the `window` variable that receives the answer and the callback that is called with it:
 
@@ -90,7 +58,9 @@ Each route in `manifest.json` declares its parameters and its output. The output
   "params": {
     "upload": {
       "type": "https_url",
-      "hosts": ["upload.example.com"],
+      "hosts": [
+        "upload.example.com"
+      ],
       "required": true
     }
   },
@@ -109,13 +79,17 @@ Events are declared next to the routes, each with its own callback:
 
 ```json
 "events": [
-  { "name": "state", "callback": "onRecorderState", "scope": "document" }
+  {
+    "name": "state",
+    "callback": "onRecorderState",
+    "scope": "document"
+  }
 ]
 ```
 
 Your native code sends an event with `emit("state", data)`, and the page's `window.onRecorderState(data)` runs. With `scope: "document"` (the default), only pages that have called the extension receive it. With `scope: "app"`, the trusted top-level page that is loaded receives it. Events are notifications only. Always read the current state through a route.
 
-### Parameter types
+#### Parameter types
 
 Parameters are declared per route. Anything not declared is refused with `bad_request`.
 
@@ -131,121 +105,239 @@ An `int` may declare `min` and `max` anywhere in the range -(2^53-1) to 2^53-1 (
 
 Keep large data on the native side and pass identifiers through the bridge. A call URL is at most 8192 characters, and each extension accepts up to 20 calls per second.
 
-## Validate the contract before native work
+---
 
-JSON parsing is only the first check. Use the runtime's manifest validator, then the selected native build. Do not add fields just because they sound useful.
+### Calling a route with the Despia JS SDK
 
-| Item | Current contract |
+Install the SDK in your web project:
+
+```bash
+npm install despia-native
+```
+
+Import `despia` from `despia-native`. The examples use the published 1.0.28 API. A command without watched variables resolves when queued, not when the native operation finishes. Pass one answer variable when you need a result:
+
+```javascript
+import despia from 'despia-native';
+
+// Run from a browser click handler or client lifecycle hook.
+async function readRecorderStatus() {
+  const reply = await despia('extension://recorder/status', ['recorderStatus']);
+  const answer = reply.recorderStatus;
+  if (answer === undefined) { console.error('No native reply within 30 seconds'); return; }
+  if (!answer.ok) console.error(answer.code, answer.error);
+  return answer;
+}
+```
+
+`recorderStatus` is the output variable declared by the Recorder manifest. Serialize calls that watch the same declared variable: await one before starting the next, including calls from other components. Sharing a watched variable across concurrent requests can mix responses.
+
+The SDK resolves native error answers as well as successes. Read the full envelope through `reply.recorderStatus`, including `ok`, `code`, `error` and `data`. Check `answer.ok`; a native failure does not reject the SDK promise. A single-variable watch resolves to `undefined` after 30 seconds if no value arrives. That timeout does not cancel native work. Inspect the returned native envelope rather than assuming every command uses the same error shape.
+
+#### Query encoding and the two timeouts
+
+Encode each value, not the whole command:
+
+```javascript
+import despia from 'despia-native';
+
+async function readRecording(id) {
+  const command = 'extension://recorder/status?id=' + encodeURIComponent(id);
+  const reply = await despia(command, ['recorderStatus']);
+  const answer = reply.recorderStatus;
+  if (answer === undefined) { console.error('No native reply within 30 seconds'); return; }
+  if (!answer.ok) { console.error(answer.code, answer.error); return; }
+  return answer.data;
+}
+```
+
+For JSON-in-a-string parameters, encode `JSON.stringify(value)`. The native decoder preserves literal `+`. If you construct a query with `URLSearchParams`, replace its form-encoded `+` with `%20` before sending; `%2B` already means a literal plus. Do not append `?` when there are no parameters. Duplicate keys, malformed escapes and undeclared parameters are rejected.
+
+The native route's `timeout_ms` defaults to 20000 and accepts 1000 to 25000 milliseconds. The SDK's single-variable watch waits 30 seconds. Native `timeout` is an error envelope; a missing watched value is `undefined`. Neither timer rolls back a native operation. Long operations should acknowledge an accepted/pending state, then expose status and declared events.
+
+#### React
+
+Importing the SDK is safe during server rendering. Call it from a client event or lifecycle hook. In Next.js, put the component behind a client boundary. Keep calls sharing an output variable sequential, including calls from other components.
+
+```jsx
+'use client';
+import {useState} from 'react';
+import despia from 'despia-native';
+
+export function RecorderStatus() {
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+  async function readStatus() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const reply = await despia('extension://recorder/status', ['recorderStatus']);
+      const answer = reply.recorderStatus;
+      setMessage(answer === undefined ? 'No native reply within 30 seconds'
+        : answer.ok ? answer.data.state : answer.code + ': ' + answer.error);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return <button disabled={busy} onClick={readStatus}>{message || 'Read recording status'}</button>;
+}
+```
+
+#### Vue
+
+Use the same SDK function from a Vue click handler. For an automatic call, use `onMounted`, never server setup execution.
+
+```vue
+<script setup>
+import {ref} from 'vue';
+import despia from 'despia-native';
+const message = ref('');
+const busy = ref(false);
+async function readStatus() {
+  if (busy.value) return;
+  busy.value = true;
+  try {
+    const reply = await despia('extension://recorder/status', ['recorderStatus']);
+    const answer = reply.recorderStatus;
+    message.value = answer === undefined ? 'No native reply within 30 seconds'
+      : answer.ok ? answer.data.state : answer.code + ': ' + answer.error;
+  } finally {
+    busy.value = false;
+  }
+}
+</script>
+<template>
+  <button :disabled="busy" @click="readStatus">{{ message || 'Read recording status' }}</button>
+</template>
+```
+
+#### Events
+
+Use the extension's state or journal routes to recover after page loads. Events are notifications, not a replay guarantee. Register the declared native callback before starting the operation, and remove your handler when its component unmounts:
+
+```javascript
+import despia from 'despia-native';
+
+const previous = despia.onRecorderState;
+const onState = recording => {
+  if (typeof previous === 'function') {
+    try { previous(recording); }
+    catch (error) { console.error('Previous recorder listener failed', error); }
+  }
+  console.log(recording.recordingId, recording.state);
+};
+globalThis.onRecorderState = onState;
+
+// Call this during component cleanup.
+function stopListening() {
+  if (globalThis.onRecorderState !== onState) return;
+  if (previous === undefined) delete globalThis.onRecorderState;
+  else globalThis.onRecorderState = previous;
+}
+```
+
+The SDK proxy reads existing browser properties such as `despia.onRecorderState`. It does not register event handlers when you assign to that proxy. Event registration above uses the native callback global explicitly; commands still go through the SDK. Run this registration only in the browser. The extension manifest defines each event's callback and scope.
+
+---
+
+### The result
+
+Every answer has the same shape:
+
+| Field       | Meaning                                                           |
+| ----------- | ----------------------------------------------------------------- |
+| `ok`        | `true` on success, `false` on error                               |
+| `provider`  | `nativeext` for every extension answer |
+| `platform`  | The platform that answered                                        |
+| `runtime`   | `3`                                                               |
+| `bridge`    | `1`                                                               |
+| `extension` | The extension id                                                  |
+| `route`     | The route name                                                    |
+| `data`      | Your handler's data on success, `null` on error                   |
+| `error`     | The error message on error                                        |
+| `code`      | The error code on error                                           |
+
+A native failure uses flat `code` and `error` fields in this envelope, not a nested `error.code` object. If the page must tell failures apart, give each one its own code.
+
+#### Error codes
+
+| Code               | When                                                                       |
+| ------------------ | -------------------------------------------------------------------------- |
+| `bad_request`      | An undeclared parameter, a missing required one, or a value of the wrong type |
+| `not_registered`   | This build does not contain the extension or route                         |
+| `forbidden_frame`  | The call did not come from the top-level page                              |
+| `forbidden_origin` | The call came from an origin that is not allowed                           |
+| `rate_limited`     | More than 20 calls per second to one extension                             |
+| `timeout`          | The handler did not answer within the route's `timeout_ms`                 |
+| `unavailable`      | The capability is not available right now                                 |
+| `platform_limit`   | This platform or OS version has no such capability. Every route of an Android extension answers it on a device below the extension's `android.min_sdk` |
+| `handler_error`    | Your handler failed                                                        |
+| Your own codes     | Any code your handler returns, for example `busy` or `permission_denied`   |
+
+In a build containing the extension runtime, a call to an extension or route that is not registered answers your explicit `callback` if you gave one; otherwise it fires `despia-feature-not-included`. A build without the extension runtime cannot answer these calls. For missing responses, see [Troubleshooting extension builds](https://setup.despia.com/extensions/troubleshooting).
+
+---
+
+### The descriptor: `despia.extension.json`
+
+The served manifest cannot hold settings, docs or authoring data: the build refuses unknown keys. That data lives in a descriptor at the root of the extension's repository, outside the served folder. The CLI reads it; the build never sees it. You need one only if your extension takes settings, ships a web helper, or you want `info` and the docs to describe it.
+
+```json despia.extension.json
+{
+  "name": "weather",
+  "id": "weather",
+  "title": "Weather",
+  "description": "Current conditions from the device's location.",
+  "docs": "https://github.com/you/weather#readme",
+  "policy": "weather.policy.json",
+  "config": {
+    "apiKey": {
+      "type": "string",
+      "required": true,
+      "title": "Weather API key (client key)",
+      "exposure": "public",
+      "example": "wk_live_pub_0123",
+      "sinks": [
+        { "to": "ios.info_plist", "key": "DESPIA_NX_WEATHER_API_KEY" },
+        { "to": "android.string", "file": "android/weather/src/main/res/values/despia_weather.xml", "name": "despia_nx_weather_api_key" }
+      ]
+    },
+    "apiSecret": { "type": "string", "exposure": "secret", "title": "Weather API secret", "env": "WEATHER_API_SECRET" }
+  }
+}
+```
+
+Top-level keys: `name`, `id`, `title`, `description`, `docs`, `root` (the folder to install when the repository nests it), `policy`, `license`, `web` (helper files for your app's source), `developerFiles` (files you write that an update never replaces), `exclude`, `notes`, `config`, `routes` (per route: the answer's JSON schema in `returns`, with the examples the mock answers from, and the error codes it may answer), `events` (per event: its `payload` schema), `requires` and `provides` (see [Dependencies](https://setup.despia.com/extensions/build/dependencies)), `androidLang` and `createdWith` (written by `create`).
+
+#### Settings (`config`)
+
+Each setting uses the manifest's own parameter types plus a few more:
+
+| Key | Meaning |
 | --- | --- |
-| Index | Only `app` and `extensions`; 1 to 8 distinct extension folder names |
-| Folder manifest | `version`; the folder supplies `id`, so an explicit `id` is rejected |
-| Route names | Lowercase letter followed by lowercase letters, digits or `_`, up to 32 characters |
-| Parameters | Only declared names and type-specific fields; `callback` is reserved for the bridge |
-| Outputs | Valid JavaScript names; a route's output variable and callback must differ |
-| Timeout | `timeout_ms` on the route, default 20000, range 1000 to 25000 milliseconds |
-| Paths | Relative to the extension folder, in the platform tree, no traversal or symlinks |
+| `type` | `string`, `int`, `bool`, `enum`, `https_url`, plus `string_list`, `json` and `file` |
+| `required`, `min`, `max`, `values`, `hosts` | As for route parameters |
+| `title`, `description`, `example`, `docs` | Shown by `info` and on the docs page |
+| `pattern` | A full-match regular expression for the value |
+| `deny` | `{pattern, message}` rules for values known to be this vendor's secrets |
+| `platforms` | `["ios"]`, `["android"]` or both; a one-platform setting is required only there |
+| `exposure` | `public` (ships in the app; anyone can read it) or `secret` (never stored; refused) |
+| `default` | Used when unset |
+| `env` | For a `secret`: the server variable the docs tell people to use |
+| `sinks` | Where the value is written; a `secret` has none. The list of sink kinds below is open: a newer CLI may add one. |
 
-Declare a string for encoded JSON only when the handler actually parses and validates that JSON. The bridge does not infer object types, file references or new routes from JavaScript. `https_url` host approval is a destination constraint, not authentication or a guarantee that a later redirect is safe. Recheck stored destinations before delayed network work.
+#### Sinks
 
-Source paths and custom directory coverage must agree with the fetched tree. Names and case matter. Do not put credentials, build policy, signing material, package caches or editor directories in the hosted source tree. The only supported hidden resource member is `.xccurrentversion` directly inside a non-hidden `.xcdatamodeld` bundle; this does not allow arbitrary dotfiles.
+| `to` | Writes |
+| --- | --- |
+| `ios.info_plist` | `ios.app.info_plist[key]` in `manifest.json` (or a named target's); the extension reads it with `Bundle.main.object(forInfoDictionaryKey:)` |
+| `android.string` | A `<string>` in an existing values XML file of the module; read with `getString(R.string.<name>)` |
+| `android.meta_data` | `android.meta_data[name].value` in `manifest.json` |
+| `manifest` | Any place in `manifest.json` by JSON pointer, for example `/bridge/routes/[name=upload]/params/url/hosts` |
+| `file` | Copies your file (for example `GoogleService-Info.plist`) to a path the manifest already names |
+| `literal` | Replaces a `REPLACE_...` string in native source; used only until an extension reads the value from a resource |
+| `runtime` | Writes nothing native; your page passes the value to the named route |
 
-## Declaring native work
+Use `android.string`, not `android.meta_data`, for long numeric IDs: Android reads a numeric-looking meta-data value as a number and can drop digits.
 
-Both ways are declared in an extension's `manifest.json`.
-
-- **Typed.** On iOS, `targets[].kind` is a preset: `widgetkit`, `notification-service`, `notification-content`, `share` or `intents`. On Android, a module with `kind: "typed"` lists sources, resources, permissions and components (`service`, `receiver`, `provider`, `activity`) from a fixed vocabulary, and the build writes the Gradle file and manifest.
-- **Custom.** On iOS, `kind: "custom"` takes a product type, build settings, script phases, a full `info_plist`, `entitlements`, link targets and packages. On Android, `kind: "custom"` points `dir` at your own module with its own `build.gradle`, `AndroidManifest.xml`, sources and resources.
-
-## Adding a Swift package or a Maven library
-
-Declare dependencies and include their required graph files. Build verification covers the complete pinned dependency closure. A package URL or Maven coordinate alone does not describe that graph or prove it was compiled into the app. Manually copying library binaries is not required.
-
-**iOS: a Swift package from GitHub.** List it under `ios.packages` in `manifest.json` with its GitHub URL, the full commit `revision` of the release you want, and the products you use. Then link the product in your app target under `ios.app.packages`. From the Stream calling template:
-
-```json
-{
-  "ios": {
-    "packages": [
-      {
-        "name": "stream-video-swift",
-        "remote": {
-          "url": "https://github.com/GetStream/stream-video-swift",
-          "revision": "5fda355f0a682ebbf1e131d80d38386acd4c4406"
-        },
-        "products": ["StreamVideo"]
-      }
-    ],
-    "package_resolved": "ios/Package.resolved",
-    "app": {
-      "packages": ["StreamVideo"]
-    }
-  }
-}
-```
-
-Swift packages come from `github.com` over https. Remote packages require `ios.package_resolved` pointing to the complete pinned `Package.resolved` graph, including transitive packages. The snippet is an excerpt, not a graph file. Missing the reference is refused with `NX-M100`.
-
-**iOS: a CocoaPod.** The manifest also accepts CocoaPods. Declare exact pod names and versions in `ios.pods`, point `ios.podfile_lock` at the lockfile under your extension's `ios/` folder, and put the installed-tree SHA-256 for every root pod in that lockfile in `ios.pod_trees`:
-
-```json
-{
-  "ios": {
-    "pods": [{ "name": "Lottie", "version": "4.5.0" }],
-    "podfile_lock": "ios/Podfile.lock",
-    "pod_trees": {
-      "Lottie": "<installed-tree-sha256>"
-    }
-  }
-}
-```
-
-This is an illustrative manifest excerpt. Replace `<installed-tree-sha256>` with the measured 64-character lowercase hexadecimal digest for each root pod in the complete lockfile closure. Include the declared versions and spec checksums. The build checks the installed trees and preserves the base app's existing pods.
-
-**Android: a Maven library.** Add a `custom` module in `manifest.json` that points at your own module folder, and list the libraries in that module's `build.gradle` with `implementation`, the same way as in Android Studio:
-
-```json
-{
-  "android": {
-    "modules": [
-      { "kind": "custom", "name": "streamcall", "dir": "android/streamcall", "link": "implementation" }
-    ]
-  }
-}
-```
-
-```groovy
-// public/despia/streamcall/android/streamcall/build.gradle
-dependencies {
-    implementation project(':nativeext-api')
-    implementation 'io.getstream:stream-video-android-core:1.35.0'
-}
-```
-
-Maven libraries come from Google's Maven repository and Maven Central. A library published only on a vendor's own Maven server is not accepted yet.
-
-Both ways may also declare:
-
-- **Android `min_sdk`** (21 to 36, typed modules). The module builds at that level. On a device below it, the extension is never created and every route answers `platform_limit`.
-- **Android `meta_data`.** Application `<meta-data>` entries, each a `name` and exactly one of `value` or `resource`. A name the app already declares, or another extension declares, is refused. Keep account values in your config, not in a public repository.
-- **iOS `packages[].weak: true`.** Products are weak-linked. This is not a general bypass for a package's compiler or deployment requirements. Check the real package graph and guard supported runtime use with `#available`.
-
-Files are accepted by type: source and text formats, assets and binaries. Every file must be covered by its `manifest.json`, and an unreferenced file is refused. A custom Android module `dir` covers its declared directory tree recursively. Hidden files are refused except for the specific `.xcdatamodeld/.xccurrentversion` resource member described above. Binaries must be declared and covered by the verified build inputs.
-
-## What the build owns
-
-You cannot set these. The build sets them for you: bundle id and package name, versions, team and signing, URL types, App Transport Security, purpose strings and permissions your app already sets in Despia (declare them under `requires`), and push and associated-domain entitlements. App Groups are logical names. A group named `nativeext` becomes `group.<bundle id>.nx.nativeext`.
-
-Build errors in your files are reported by their served path, `<extension>/<ios|android>/<your path>:<line>:<column>`, for example `recorder/ios/app/RecorderExtension.swift:42:17`. Build diagnostics have redaction handling. Do not assume every native or WebView runtime log is redacted, and do not log raw commands, credentials or authenticated URLs.
-
-## Set up iOS App Groups
-
-Use an App Group when your iOS app and an embedded target, such as a widget, need to read and write the same data.
-
-1. Put the same logical group name in `com.apple.security.application-groups` under `ios.app.entitlements` and under `entitlements` on each participating target in `ios.targets`. Keep the short name, such as `widgets`, in the manifest.
-2. In Apple Developer, register `group.<app bundle ID>.nx.<logical name>`. For Home Widgets in `com.example.myapp`, register `group.com.example.myapp.nx.widgets`.
-3. Assign the group to the main App ID and the widget extension App ID on the same team. The Home Widgets target is `NXWidgets`, so its generated bundle ID is `com.example.myapp.NXWidgets`. Register that separate App ID before assigning the group. Keep these existing target IDs when configuring the current V3 runtime.
-4. Regenerate the provisioning profiles for the app and the widget target. Use those profiles for the next native build, then check that both processes can access the shared data on a device.
-
-The manifest requests the entitlement. Apple provisioning grants it. `NX-S010` means the build needs a profile for the reported bundle ID. For `NX-S011` on `com.apple.security.application-groups`, check that the reported bundle's profile grants the exact group ID.
-
-See [Set up iOS App Groups](https://setup.despia.com/experiments/v3-extensions#set-up-ios-app-groups) for the public guide. These instructions apply to targets declared in the V3 manifest; built-in Home Widgets and Share Extension have their own setup.
+The CLI changes values only where the upstream files already hold a placeholder. It never adds, renames or removes a served file.

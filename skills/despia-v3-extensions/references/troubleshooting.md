@@ -1,16 +1,31 @@
-# Troubleshooting extension builds
+# Troubleshooting
+
+Generated from the docs pages below; do not edit by hand. Change the page and regenerate.
+
+
+## Troubleshooting extension builds
+
+Page: https://setup.despia.com/extensions/troubleshooting
+
+### Run doctor first
+
+```bash
+npx despia-extensions doctor --hosted https://your.app
+```
+
+It checks your project, your values and the files your deployed site really serves, the way the build fetches them. Every `DX-` code it prints is explained in the [CLI reference](https://setup.despia.com/extensions/reference/cli#error-codes), and `npx despia-extensions explain <code>` explains any `DX-` or `NX-` code.
 
 Start with the stage that failed. Preserve the exact native build, extension source and sanitized error. Do not use a user-agent string or a successful website deployment as proof that an extension is installed.
 
-## Hosted files exist, but the installed app has no feature
+### Hosted files exist, but the installed app has no feature
 
-Extension files must be compiled into a rebuilt native app. Uploading files does not change an installed binary. Automatic discovery of hosted `/despia/extensions.json` during normal rebuilds is under review and is not confirmed deployed. Inspect the selected build inputs, compilation and installed artifact. Do not invent a per-app enrollment switch or human source-approval requirement.
+Extension files must be compiled into a rebuilt native app. Uploading files does not change an installed binary. Extension builds are not yet open to every app. An app that serves `/despia/extensions.json` today gets a clear build error rather than a build without its extensions. The standard build of an app with no index is unchanged. There is no per-app enrollment switch. Inspect the selected build inputs, compilation and installed artifact. Do not invent a human source-approval requirement.
 
-Check each response body at its exact public path. A status-200 HTML fallback is not an index, manifest or native source file. Serve the extension tree before the SPA fallback, and accept the build fetcher's `despia-nx-fetch/1` user agent. A valid index alone does not prove all referenced files are served or selected.
+Check each response body at its exact public path. A status-200 HTML fallback is not an index, manifest or native source file. Serve the extension tree before the SPA fallback, and do not block the build's automated fetcher with bot protection or sign-in. A valid index alone does not prove all referenced files are served or selected.
 
-See `build-and-release.md` for the difference between source verification, compilation and installed behavior.
+See [Build inclusion and release checks](https://setup.despia.com/extensions/build/publishing#before-you-ship-it-in-an-app) for the difference between source verification, compilation and installed behavior.
 
-## The SDK call gives no usable answer
+### The SDK call gives no usable answer
 
 Use `npm install despia-native`, import `despia` from `despia-native` and watch the route's exact declared `output.variable`. For Recorder status, this is `await despia('extension://recorder/status', ['recorderStatus'])`, then `reply.recorderStatus`.
 
@@ -26,44 +41,52 @@ An absent runtime cannot answer. A forbidden caller can be silent. An unknown ro
 
 Keep commands in browser lifecycle hooks or click handlers inside the installed app. SDK imports are SSR-safe; server rendering must not execute native calls. The SDK proxy can read a browser global, but assigning to it does not register an event callback.
 
-## The manifest is JSON, but validation fails
+### The manifest is JSON, but validation fails
 
-Use the current runtime's contract. The index accepts `app` and `extensions`; it has no `manifest_version`. It requires real app identity and 1 to 8 distinct extension folder names. The folder's `manifest.json` uses `version` and must not repeat the folder id in an `id` field.
+Use the current runtime's contract. The index requires `extensions`, a list of 0 to 8 unique folder names, and has no `manifest_version`. An optional legacy `app` block is accepted only when it matches the build. The folder's `manifest.json` uses `version` and must not repeat the folder id in an `id` field.
 
 Put route `timeout_ms` beside `name`, `params` and `output`, not inside `params`. Omit `params` or use an empty object for a route without parameters. Declare types, required values, enum choices, string bounds and HTTPS hosts explicitly. Unknown fields and undeclared query parameters are rejected.
 
-Paths are relative to the extension folder, confined to the declared platform tree and case-sensitive in the fetched layout. Do not use absolute paths, `..`, symlinks or editor files. The narrow `.xcdatamodeld/.xccurrentversion` resource exception is not general dotfile support. See `manifest.md`.
+Paths are relative to the extension folder, confined to the declared platform tree and case-sensitive in the fetched layout. Do not use absolute paths, `..`, symlinks or editor files. The narrow `.xcdatamodeld/.xccurrentversion` resource exception is not general dotfile support. See [the manifest reference](https://setup.despia.com/extensions/reference/manifest#folder-layout).
 
-## Spaces, JSON or a signed URL arrive changed
+The prepared iOS runtime accepts approved nonempty `NS...UsageDescription` text through `ios.app.info_plist` with `custom_keys: true`. Nonempty app-configured text wins; absent or blank app text uses the extension fallback. Required/declared text must be a nonempty string. This runtime change is pending deployment; it uses the existing manifest path and needs no new dashboard field for each framework. Managed capabilities, such as payment acceptance entitlements, still need the applicable Apple approval and a matching provisioning profile. Declaring an entitlement does not grant eligibility.
+
+### Spaces, JSON or a signed URL arrive changed
 
 Encode each query value with `encodeURIComponent`; encode JSON after `JSON.stringify`. The runtime treats a literal `+` as a plus, not a space. `URLSearchParams.toString()` emits plus signs for spaces, so replace those plus signs with `%20` before dispatch if you use it. An already encoded `%2B` is a literal plus. Do not double-encode the entire command, duplicate query keys or append an empty trailing `?`.
 
 Keep the complete command within 8192 characters and declared string bounds. Pass native file identifiers rather than file bytes. Check the backend's method and body format separately from bridge parameter decoding.
 
-## A permission route times out
+### A permission route times out
 
 A native route defaults to 20000 milliseconds; `timeout_ms` accepts 1000 to 25000. A system dialog can remain open longer. Return a pending state promptly, then use a declared event plus a readable status route. The SDK's 30-second wait is a different timer and does not cancel native work.
 
 After an asynchronous wait, check `call.isActive` on iOS or `call.isActive()` on Android before starting new work for that waiting call. Define cancellation and durable state for work that intentionally outlives a call.
 
-## Permissions or signing are missing
+### Permissions or signing are missing
 
 Declarations, build configuration, runtime consent and store eligibility are separate. On Android, `android.requires.permissions` checks base permissions; it does not grant user consent. An Activity permission request needs the declared `activity_lifecycle` hook and the actual `onActivityEvent` API. Namespace Activity Result Registry keys with `ctx.resultKey`.
 
 On the current iOS contract, configure purpose descriptions through Despia's permissions. The extension cannot override the app's build-owned descriptions. App Groups need registered group and app/target identifiers, matching entitlements and regenerated provisioning profiles. The currently deployed target naming example is `<bundle>.NXWidgets`. Managed capabilities require the relevant Apple eligibility and profile. A manifest cannot grant them.
 
-## A dependency or compiler check fails
+### A dependency or compiler check fails
 
-A Git commit pin alone is not a complete SwiftPM graph. Remote packages also require `ios.package_resolved` naming the complete `Package.resolved` inside the extension's `ios/` directory; missing it produces `NX-M100`. CocoaPods needs the declared pods, lock and measured closure. Custom Android modules must resolve against the allowed repositories and verified dependency graph. Changed dependencies need fresh verification.
+A Git commit pin alone is not a complete SwiftPM graph. Remote packages also require `ios.package_resolved` naming the complete `Package.resolved` inside the extension's `ios/` directory; a build without it is refused. CocoaPods needs the declared pods, lock and measured closure. Custom Android modules must resolve against the allowed repositories and verified dependency graph. Changed dependencies need fresh verification.
 
 Use the real host toolchain and pinned SDK API. The current V3 iOS project uses Swift language mode 5.0, which is distinct from the installed compiler version. The current Android project uses compileSdk 36. A dependency minimum OS cannot be bypassed by an extension route availability guard. Standalone compilation does not prove host integration.
 
-## It builds, but recording or uploading stops in the background
+### It builds, but recording or uploading stops in the background
 
 Read the chosen implementation's lifecycle. Recorder uses a native audio session/service and its own raw `audio/mp4` PUT uploader. Its iOS transfer uses an in-process ephemeral session with opportunistic background processing; Android uses a regular WorkManager worker. Neither is an indefinite execution grant. A stopped attempt can restart from byte zero.
 
-Do not substitute a multipart endpoint for Recorder's PUT contract, equate `uploading` with server success, or treat a separate background-upload prototype as a tested Recorder integration. Reproduce the specific suspension, force-quit, retry and server failure case before promising it. Read `recorder-sample.md` and `limits.md`.
+Do not substitute a multipart endpoint for Recorder's PUT contract, equate `uploading` with server success, or treat a separate background-upload prototype as a tested Recorder integration. Reproduce the specific suspension, force-quit, retry and server failure case before promising it. Read [Recorder limits](https://setup.despia.com/extensions/catalog/recorder#recording-and-upload-boundaries).
 
-## What diagnostics can I share?
+### What diagnostics can I share?
 
 Share sanitized error codes, route names, source revisions and build/artifact identifiers. Remove access tokens, full authenticated URLs, headers, user content and file payloads. Do not log raw commands or assume the current host redacts every native/WebView log. Keep the original evidence privately without copying sensitive values into a public issue.
+
+### Hosting and SPA fallbacks
+
+For `https://example.com/despia/`, the origin is `https://example.com` and the extension path prefix is `/despia`. The build fetches `extensions.json`, the selected folders' manifests and their declared files from that location. The local `public` directory name is not part of the URL.
+
+Serve these files as actual static files before your site's fallback to `index.html`. HTTP 200 alone does not prove a file is available. Open `/despia/extensions.json` directly and check that its body is JSON, then check the manifest and source paths. A fallback returning HTML for a missing required file fails parsing or the build size and hash checks. Unknown routes may use an SPA fallback as long as the required extension paths return their correct bytes.

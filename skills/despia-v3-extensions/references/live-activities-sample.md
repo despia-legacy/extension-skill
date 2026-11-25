@@ -1,22 +1,31 @@
-# Live Activities extension
+# Live Activities
 
-Documentation: https://setup.despia.com/experiments/samples/live-activities
+Generated from the docs pages below; do not edit by hand. Change the page and regenerate.
+
+
+## Live Activities
+
+Page: https://setup.despia.com/extensions/catalog/live-activities
 
 Source: [Live Activities repository](https://github.com/despia-legacy/live-activities). Read its [LICENSE](https://github.com/despia-legacy/live-activities/blob/main/LICENSE) before using or modifying the extension.
 
 This extension starts, updates, ends and lists native activities from your web app. It includes delivery, score and timer templates. On iOS it uses ActivityKit for the Lock Screen and Dynamic Island. On Android it uses ongoing notifications, with Live Updates on Android 16 and later when the system allows promotion.
 
-It is for the Despia V3 runtime. You own and maintain the copied native code. First-party V4 support comes through the new package registry. Read [V3 Extensions](https://setup.despia.com/experiments/v3-extensions) for build verification and rebuild requirements.
+It is for the Despia V3 runtime. You own and maintain the copied native code. Read [V3 Extensions](https://setup.despia.com/extensions/overview) for build verification and rebuild requirements.
 
-## Install
+```bash
+npx despia-extensions add live-activities
+```
 
-1. Copy the files from the linked extension repository into `public/despia/liveactivity/` in your web app, keeping their `ios/` and `android/` paths.
-2. Add `"liveactivity"` to the `extensions` array in `public/despia/extensions.json`, keeping your app identity and any other extension names.
-3. Rebuild and install your native app with the extension compiled in. Changing native files requires fresh build verification and a new build.
+> **Warning:** Uploading files does not change an installed app. Rebuild the native app after you install, update or remove this extension. You own and maintain the extension's code once it is in your app.
 
-The manifest adds the `NXLiveActivity` WidgetKit target on iOS. The Android custom module adds its notification permissions, notification service extension and dismiss receiver. Local calls work without OneSignal; server updates require the base app's push integration and your server configuration. Do not put server credentials in your web app.
+### Install
 
-## Call it from your web app
+Run the command above in your web project, commit, deploy, then rebuild the app. See [Install with the CLI](https://setup.despia.com/extensions/install).
+
+This extension has no settings.
+
+### Call it from your web app
 
 Install the SDK with `npm install despia-native`. Import `despia` from `despia-native` and watch the route's declared output variable. Call these functions from client events. Timer times are Unix seconds.
 
@@ -47,7 +56,7 @@ async function endTimer() {
 }
 ```
 
-## Routes and answers
+### Routes and answers
 
 Each success answer uses `{ok: true, data: ...}`. Failures use `{ok: false, code, error}`. The table lists the fields inside `data`.
 
@@ -64,7 +73,7 @@ Each success answer uses `{ok: true, data: ...}`. Failures use `{ok: false, code
 
 Each row in `activities` has `activityId`, `template`, `state`, `origin`, `pushToken`, `attributes` and `content`. On Android `pushToken` is `null` and `pushToStart` is empty. iOS authorization fields are `enabled`, `frequentPushes`, `onesignal` and `platform`. Android fields are `enabled`, `permission`, `promoted`, `liveUpdates`, `onesignal` and `platform`. `onesignal` is `linked` or `not_linked`.
 
-### Templates
+#### Templates
 
 | Template | Attributes | State |
 | --- | --- | --- |
@@ -74,7 +83,7 @@ Each row in `activities` has `activityId`, `template`, `state`, `origin`, `pushT
 
 The template source files define these fields. Edit the Swift template, Android template and registries together when adding your own template.
 
-### Events
+#### Events
 
 Events have app scope and reach the trusted top-level page.
 
@@ -86,11 +95,11 @@ Events have app scope and reach the trusted top-level page.
 
 Read `list` to recover the current state after a page loads. Do not rely only on events.
 
-### Errors
+#### Errors
 
-Besides the [standard bridge errors](https://setup.despia.com/experiments/v3-extensions#error-codes), the extension can return `unknown_template`, `activities_disabled`, `exists`, `bad_value`, `too_large` and `unknown_activity`. iOS can also return `activity_failed`, `not_foreground`, `too_many` or `unsupported`. Android can return `storage_failed` or `busy` while a notification permission prompt is open. `settings` can return `unavailable`.
+Besides the [standard bridge errors](https://setup.despia.com/extensions/reference/manifest#error-codes), the extension can return `unknown_template`, `activities_disabled`, `exists`, `bad_value`, `too_large` and `unknown_activity`. iOS can also return `activity_failed`, `not_foreground`, `too_many` or `unsupported`. Android can return `storage_failed` or `busy` while a notification permission prompt is open. `settings` can return `unavailable`.
 
-## Platform limits
+### Platform limits
 
 - iOS local starts require the app to be in the foreground. The extension widget target declares iOS 16.6. Push-to-start requires iOS 17.2 or later. ActivityKit and the user's settings control visibility, lifetime and push delivery.
 - Android 16 and later can promote an eligible ongoing notification to a Live Update. Earlier versions use an ordinary ongoing notification. Promotion is not guaranteed.
@@ -98,3 +107,32 @@ Besides the [standard bridge errors](https://setup.despia.com/experiments/v3-ext
 - On Android 7, ended notifications are removed immediately because notification timeouts are unavailable. On later Android versions the extension uses a timeout for `default` and `after` dismissal.
 
 The [extension skill](https://github.com/despia-legacy/extension-skill) includes a reference for this extension.
+
+### Reference
+
+Version 1.0.0. Call a route as `extension://liveactivity/<route>`. The answer is written to the route's variable on `window`, then its callback is called with it.
+
+#### Routes
+
+| Route | Parameters | Answer variable | Callback |
+| --- | --- | --- | --- |
+| `start` | `template`: string, max 32, **required**<br/>`activity_id`: string, max 64<br/>`attributes`: string, max 4096, **required**<br/>`state`: string, max 4096, **required**<br/>`stale_minutes`: int, min 0, max 720<br/>`relevance`: int, min 0, max 100 | `liveActivityStart` | `onLiveActivityStart` |
+| `update` | `activity_id`: string, max 64, **required**<br/>`state`: string, max 4096, **required**<br/>`stale_minutes`: int, min 0, max 720<br/>`relevance`: int, min 0, max 100<br/>`alert_title`: string, max 120<br/>`alert_body`: string, max 240 | `liveActivityUpdate` | `onLiveActivityUpdate` |
+| `end` | `activity_id`: string, max 64, **required**<br/>`state`: string, max 4096<br/>`dismiss`: one of `default`, `immediate`, `after`<br/>`dismiss_minutes`: int, min 0, max 240 | `liveActivityEnd` | `onLiveActivityEnd` |
+| `list` | none | `liveActivityList` | `onLiveActivityList` |
+| `permission` | none | `liveActivityPermission` | `onLiveActivityPermission` |
+| `settings` | none | `liveActivitySettings` | `onLiveActivitySettings` |
+
+#### Events
+
+| Event | Callback | Scope |
+| --- | --- | --- |
+| `token` | `onLiveActivityToken` | app |
+| `state` | `onLiveActivityState` | app |
+| `dismissed` | `onLiveActivityDismissed` | app |
+
+#### Native requirements
+
+| Platform | What the build adds |
+| --- | --- |
+| iOS | Frameworks: `ActivityKit`, `SwiftUI`, `WidgetKit` |
