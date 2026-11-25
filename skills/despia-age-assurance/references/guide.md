@@ -116,7 +116,7 @@ window.onAgeAssuranceResult = function (verdict) {
   iOS only. Apple reports this user is not subject to age checks at all, which is knowledge rather than absence. Treat it as an adult account unless your own policy says otherwise.
 
 - `unavailable` (object):
-  No provider could answer. `ok` is `false` and `error.code` says why: `os_unsupported`, `not_configured`, `no_play_services`, `no_result`, or a Play condition this install cannot recover from. Use your own gating.
+  No provider could answer. `ok` is `false` and `error.code` says why: `os_unsupported`, `not_configured`, `no_play_services`, `no_result`, or a Play condition this install cannot recover from: `api_not_available`, `play_store_not_found`, `play_services_not_found`, `play_store_version_outdated`, `play_services_version_outdated`, `sdk_version_outdated`, `app_not_owned` or `device_not_supported` (Play Age Signals 0.0.6: this type of device is not supported). Use your own gating.
 
 - `error` (object):
   The call itself failed. `ok` is `false`. `error.code` is stable and machine-readable, `error.message` is advisory text for your logs. Common codes are `invalid_gates`, `too_many_gates`, `unsupported_action`, `network_error`, and `timeout`.
