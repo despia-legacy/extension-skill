@@ -1,0 +1,175 @@
+# despia-external-links
+
+Generated from the docs pages below; do not edit by hand. Change the page and regenerate.
+
+
+## External Links
+
+Page: https://setup.despia.com/native-features/external-links
+
+<iframe src="https://www.youtube.com/embed/xndyQytJs3E" title="YouTube video player" frameborder="0" className="w-full aspect-video rounded-xl" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen />
+
+> **Note:** The video uses a specific AI coding tool to demonstrate the setup, but the configuration works 1:1 with Cursor, Claude Code, or any other tool. Despia is web framework and tooling agnostic, so the only thing that matters is the redirect.
+
+Despia apps are native iOS and Android applications, so external links cannot just navigate the WebView away from your app the way they would in a browser. The runtime intercepts `window.open(url, '_blank')` and routes the URL to one of two destinations: the in-app browser by default, or the system browser (Safari on iOS, Chrome on Android) for whitelisted domains. The system browser route exists primarily for App Store and Play Store compliance around payments and OAuth.
+
+---
+
+### Installation
+
+
+**Bundle**
+
+<CodeGroup>
+
+```bash npm
+npm install despia-native
+```
+
+```bash pnpm
+pnpm add despia-native
+```
+
+```bash yarn
+yarn add despia-native
+```
+
+</CodeGroup>
+
+```javascript
+import despia from 'despia-native';
+```
+
+**CDN**
+
+<CodeGroup>
+
+```html UMD
+<script src="https://cdn.jsdelivr.net/npm/despia-native/index.min.js"></script>
+```
+
+```html ESM
+<script type="module">
+    import despia from 'https://cdn.jsdelivr.net/npm/despia-native/+esm'
+</script>
+```
+
+</CodeGroup>
+
+
+
+---
+
+### How it works
+
+The runtime intercepts `window.open(url, '_blank')` and decides where the URL opens based on its domain. Domains in your Despia whitelist open in the system browser. Everything else opens in the in-app browser, which keeps the user inside your app and lets them return with a tap.
+
+```javascript
+// Default route, opens inside the in-app browser
+window.open('https://example.com/help', '_blank')
+
+// If buy.stripe.com is whitelisted in the Despia Editor,
+// this opens in Safari/Chrome instead
+window.open('https://buy.stripe.com/your-checkout', '_blank')
+```
+
+You do not call the Despia SDK directly for this. The hook is on the standard `window.open` call, so any link, button, or framework router that produces a `_blank` target works without modification.
+
+---
+
+### Configure domain routing in Despia
+
+Whitelist domains in the Despia Editor under **App \> Integrations \> External Links**. Add the bare domain (no `https://`, no path), one per line. Any URL whose host matches a whitelisted entry opens in the system browser. Subdomain matching is exact, so add each subdomain you need separately.
+
+Common whitelist entries by use case:
+
+- **Payments**: `buy.stripe.com`, `checkout.stripe.com`, `paypal.com`, `www.paypal.com`
+- **OAuth**: `accounts.google.com`, `appleid.apple.com`, `github.com`, `login.microsoftonline.com`
+- **App Store rules**: anything that takes a credit card or grants account access typically belongs here
+
+> **Warning:** Apple and Google reject apps that process payments or run OAuth inside an embedded browser. If you are charging users or signing them in with a third-party identity provider, the destination domain must be whitelisted so it opens in Safari or Chrome. Skipping this is one of the most common store rejection reasons for hybrid apps.
+
+---
+
+### Open external content in the in-app browser
+
+The default route is the right choice for help articles, blog posts, terms of service, and any read-only content where you want the user to come back. The in-app browser sits over your app, dims the background, and dismisses with a single tap.
+
+```javascript
+function openHelpArticle() {
+    window.open('https://example.com/help/getting-started', '_blank')
+}
+
+function openTerms() {
+    window.open('https://example.com/legal/terms', '_blank')
+}
+```
+
+In React, attach the handler to a button rather than using a bare `<a target="_blank">`, since some frameworks intercept anchor clicks for client-side routing.
+
+```jsx
+function HelpButton() {
+    return (
+        <button onClick={() => window.open('https://example.com/help', '_blank')}>
+            Help
+        </button>
+    )
+}
+```
+
+---
+
+### Open payments and OAuth in the system browser
+
+Once a domain is whitelisted, the same `window.open` call routes to Safari or Chrome instead. No special syntax, no SDK call, just `window.open(url, '_blank')` with a URL whose host is on the list.
+
+```javascript
+function startStripeCheckout(sessionUrl) {
+    // buy.stripe.com is whitelisted, this opens in Safari on iOS
+    window.open(sessionUrl, '_blank')
+}
+
+function signInWithGoogle() {
+    // accounts.google.com is whitelisted, this opens in Safari
+    window.open('https://accounts.google.com/o/oauth2/v2/auth?...', '_blank')
+}
+```
+
+For OAuth flows specifically, pair this with a deep link return URL so the system browser can hand control back to your app after authentication. See the [Deeplinking](https://setup.despia.com/native-features/deeplinking) page for the matching universal link and app link configuration.
+
+---
+
+### Links that open another app
+
+Page links to a phone number, a text message, a map, an email, a store listing or a chat open the app that handles them, and the page stays where it was.
+
+```html
+<a href="tel:+15551234567">Call us</a>
+<a href="sms:+15551234567">Send a text</a>
+<a href="mailto:hello@example.com">Email us</a>
+<a href="geo:25.2048,55.2708">Open the map</a>
+<a href="market://details?id=com.example.app">Rate us on Google Play</a>
+```
+
+| Link | Android opens |
+| --- | --- |
+| `tel:` | The phone app (dialer) |
+| `sms:` | The messages app |
+| `geo:` and Google Maps links | A maps app |
+| `market:` and `play.google.com` | The Play Store |
+| `mailto:` | A mail app |
+| `whatsapp:` | WhatsApp |
+| `intent:` | The app the intent names |
+
+On Android 11 and later the runtime starts the link and shows "No application can handle this request" only when the device has no app that can open it. It does not check first, because from Android 11 an app cannot see other installed apps unless its manifest lists them, and a list cannot cover every scheme a page might use (Android developers, "Package visibility use cases", read 25 Nov 2026). Before this change, `tel:`, `sms:`, `geo:` and `market:` links showed that message on Android 11 and later even though the dialer, Messages, Maps and the Play Store were installed. `mailto:` and `whatsapp:` links no longer crash a device that has no mail app or no WhatsApp; they show the same message.
+
+Home-screen quick actions whose link is one of these (for example a **Call support** action with `tel:+15551234567`) take the same route.
+
+---
+
+### Resources
+
+
+  - [NPM Package](https://www.npmjs.com/package/despia-native): despia-native
+
+  - [Support](mailto:support@despia.com): [support@despia.com](mailto:support@despia.com)
