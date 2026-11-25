@@ -1,0 +1,193 @@
+# despia-quick-actions
+
+Generated from the docs pages below; do not edit by hand. Change the page and regenerate.
+
+
+## Quick Actions
+
+Page: https://setup.despia.com/native-features/quick-actions
+
+<iframe src="https://www.youtube.com/embed/UDbmAj5yWso" title="YouTube video player" frameborder="0" className="w-full aspect-video rounded-xl" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen />
+
+> **Note:** The video uses a specific AI coding tool to demonstrate the setup, but the configuration works 1:1 with Cursor, Claude Code, or any other tool. Despia is web framework and tooling agnostic, so the only things that matter are the global JavaScript function you define and the shortcut configuration in the Despia Editor that calls it.
+
+When the user long-presses your app icon, the OS shows a list of shortcuts you configured in the Despia Editor: Home Screen quick actions on iOS, app shortcuts in the launcher on Android. Tapping one launches your app, opens the shortcut's Quick Link, and runs the JavaScript you set on it, which can call a global function of yours. There is no SDK call from your code, the runtime runs the snippet directly.
+
+---
+
+### Installation
+
+Quick Actions does not require installing the `despia-native` package. The runtime invokes your global function directly when the shortcut fires, no SDK calls or imports needed on your side. Install `despia-native` only if your page also uses other Despia schemes.
+
+
+**Bundle**
+
+<CodeGroup>
+
+```bash npm
+npm install despia-native
+```
+
+```bash pnpm
+pnpm add despia-native
+```
+
+```bash yarn
+yarn add despia-native
+```
+
+</CodeGroup>
+
+```javascript
+import despia from 'despia-native';
+```
+
+**CDN**
+
+<CodeGroup>
+
+```html UMD
+<script src="https://cdn.jsdelivr.net/npm/despia-native/index.min.js"></script>
+```
+
+```html ESM
+<script type="module">
+    import despia from 'https://cdn.jsdelivr.net/npm/despia-native/+esm'
+</script>
+```
+
+</CodeGroup>
+
+
+
+---
+
+### How it works
+
+Two pieces have to line up. First, attach the function you want the shortcut to trigger as a global on `window`. Second, configure a Quick Action in the Despia Editor that calls that function. The runtime picks up the configuration during the build and wires the shortcut to invoke your function on tap.
+
+```javascript
+window.dontLeave = function () {
+    // your workflow here, runs when the user taps the shortcut
+}
+```
+
+The function must be globally accessible because the native runtime invokes it by name. Defining it inside a closure or module scope will not work, the runtime cannot reach it.
+
+---
+
+### Despia Editor setup
+
+Configure the shortcut in the Despia Editor under **Add-ons \> Hard Coded \> Quick Actions**. Each shortcut has a label, an icon, a Quick Link, and a JavaScript snippet that the runtime executes once the Quick Link has loaded.
+
+
+**Open Quick Actions**
+
+In the Despia Editor, navigate to **Add-ons \> Hard Coded \> Quick Actions** and click **Add New**.
+
+**Name the shortcut**
+
+Give it a short, action-oriented label like `Don't Leave`, `Track Macros`, or `Scan Invoice`. This is the text the user sees in the long-press menu.
+
+**Select an icon**
+
+Choose an icon from the picker that visually matches the action. The icon shows next to the label in the long-press menu.
+
+**Set the Quick Link**
+
+Set the Quick Link to the page of your app that defines the function, for example your app's home address. The runtime opens it when the shortcut is tapped, and runs your JavaScript once that page has loaded. On Android a shortcut without a label or without a Quick Link is not published.
+
+**Add the JavaScript**
+
+In the JavaScript editor, call your global function inside the commented section:
+
+```javascript
+window.dontLeave()
+```
+
+Replace `dontLeave` with whatever name you used for your global function in the web app. The function name has to match exactly.
+
+**Save and rebuild**
+
+Save the shortcut, then trigger a fresh build from the Despia Editor. Quick Actions are native components compiled into the binary, so this cannot be applied over-the-air. After the rebuild, the shortcut appears in the long-press menu on the user's home screen.
+
+
+
+To add more shortcuts, repeat the flow with a different label, icon, and function call. Each shortcut is independent.
+
+> **Warning:** The function name in the Despia Editor JavaScript field must match the global function name in your web app exactly. A typo on either side means the shortcut taps into a `function is not defined` error and nothing happens. Copy the name, do not retype.
+
+---
+
+### Platform notes
+
+| | iOS | Android |
+| --- | --- | --- |
+| Where it shows | Long-press menu of the Home Screen icon | App shortcuts of the launcher, on the app icon |
+| How many | The first four, in the editor's order | The first four, in the editor's order, and never more than the launcher's own limit (`getMaxShortcutCountPerActivity`; most launchers show four) |
+| Icon | The shortcut's symbol, as a system symbol | The same symbol drawn from its vector path as the shortcut icon; the app icon when it cannot be drawn |
+| Published | When the app starts | On every launch, replacing the app's earlier shortcuts; an empty list clears them |
+| On tap | Opens the Quick Link, then runs the JavaScript | Opens the Quick Link through the web view's normal link checks, then runs the JavaScript. On a cold start this happens once the first page has loaded |
+
+On Android the shortcut carries only its position, never the link or the script. The app looks the shortcut up in its own list when it is tapped, so another app cannot send your web view a link or a script. A shortcut that is not in the list does nothing, and neither does a Quick Link that starts with `javascript:`, `file:`, `data:`, `content:`, `blob:` or `vbscript:`. A tap runs once: recreating the app or reopening it from Recents does not replay it. Source for the launcher limit: Android Developers, "App shortcuts" (shortcut limitations), read 25 Nov 2026.
+
+---
+
+### Define the global function
+
+The function attaches to `window` directly. In a vanilla HTML page you can write `window.dontLeave = function() { ... }` at any point before the user could possibly tap the shortcut. In a React or other framework app, attach inside a top-level `useEffect` so the function lands on `window` once the app mounts and stays there for the rest of the session.
+
+```jsx
+import { useEffect } from 'react'
+
+function App() {
+    useEffect(() => {
+        window.dontLeave = () => {
+            showFeedbackModal()
+        }
+
+        window.trackMacros = () => {
+            navigateTo('/macros/new')
+        }
+
+        window.scanInvoice = () => {
+            startCameraScan()
+        }
+    }, [])
+
+    return <YourApp />
+}
+```
+
+Re-bind on every mount of your top-level component so the function survives navigation and component swaps. The native runtime fires the call whenever the user taps the shortcut, including on cold app launches, so the function has to be on `window` before any user interaction is possible.
+
+---
+
+### Pass arguments via the function body
+
+The Despia Editor JavaScript field executes the snippet you put there as a literal expression, so you can pass hardcoded arguments to your function if one shortcut should always do one specific thing. This unlocks "one function, many shortcut variations" without defining a new global per shortcut.
+
+```javascript
+window.openCategory = function (category) {
+    navigateTo(`/categories/${category}`)
+}
+```
+
+In the Despia Editor JavaScript field for each shortcut:
+
+```javascript
+window.openCategory('food')      // Shortcut 1: "Browse Food"
+window.openCategory('drinks')    // Shortcut 2: "Browse Drinks"
+window.openCategory('desserts')  // Shortcut 3: "Browse Desserts"
+```
+
+Three shortcuts, one function. Each shortcut shows up separately in the long-press menu.
+
+---
+
+### Resources
+
+
+  - [NPM Package](https://www.npmjs.com/package/despia-native): despia-native
+
+  - [Support](mailto:support@despia.com): [support@despia.com](mailto:support@despia.com)
