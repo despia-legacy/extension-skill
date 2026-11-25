@@ -10,7 +10,7 @@ Built into the Despia V3 app; nothing to install. The page declares a native nav
 ## The flow
 
 1. Add the meta tags to the `<head>` of every page that should show the chrome; a document that declares nothing turns it off, unless the bar has `persist=true`.
-2. Pick the bar keys (`title`, `style`, `back`, `items`, colours) and the tab keys (`items`, `selected`); `items` is a JSON array of `{ id, title, icon: { sfSymbol, svg }, ... }`.
+2. Pick the bar keys (`title`, `style`, `back`, `items`, colours) and the tab keys (`items`, `selected`); `items` is a JSON array of `{ title, id, icon: { sfSymbol, material, svg }, ... }`; `title` is required and `id` defaults to it.
 3. Define `window.onNavigationEvent(e)` for `item`, `tab` and (with `backaction=event`) `back` events.
 4. Pad the content with `--navigation-inset-top` and `--navigation-inset-bottom` so nothing hides under the bars.
 5. For pages that render late, set `ready=manual` and call `navigation://ready` when the content is on screen.
@@ -20,7 +20,7 @@ Built into the Despia V3 app; nothing to install. The page declares a native nav
 
 - Only keys and values in the guide exist; anything else is ignored with a console warning. Do not invent keys.
 - Encode every call value with `encodeURIComponent`; `items` is JSON text.
-- Give every icon both `sfSymbol` (iOS) and `svg` or `src` (Android).
+- Give every icon an `sfSymbol` (iOS) and a `material` name or `svg` or `src` (Android); without `material`, Android maps the SF Symbol name.
 - Check `window.despiaNavigation?.supported` before relying on it; older builds do not have it.
 - With `backaction=event`, go back with `history.back()`; `navigation://back` sends the event again.
 - Check the platform table before promising a key's effect on Android.
